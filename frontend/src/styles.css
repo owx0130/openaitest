@@ -60,15 +60,14 @@ input {
   margin-bottom: 50px;
   padding: 15px;
   border-radius: 5px;
-  border: solid 0.5px;
+  border: solid 0px;
   outline: none;
   background-color:aliceblue;
+  box-shadow: 5px 5px 5px rgba(0,0,0,0.2);
 }
 
-.submit-button {
-  color: black;
-  cursor: pointer;
-  position: relative;
-  bottom: 0px;
-  right: 40px;
+ul {
+  width: auto;
+  margin: 0px;
+  padding: 0px;
 }
