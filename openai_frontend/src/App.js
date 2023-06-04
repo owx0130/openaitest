@@ -1,11 +1,12 @@
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
+import './styles.css'
+import Sidebar from './components/sidebar'
+import Main from './components/main'
 
-      </header>
+export default function App() {
+  return(
+    <div className="app">
+      <Sidebar />
+      <Main />
     </div>
-  );
+  )
 }
-
-export default App;
