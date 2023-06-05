@@ -45,10 +45,6 @@ body {
   cursor: pointer;
 }
 
-p {
-  color: whitesmoke;
-}
-
 .bottom-section {
   width:100%;
   display: flex;
