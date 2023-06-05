@@ -4,7 +4,7 @@ import Feed from "./feed";
 export default function Main() {
   const [value, setValue] = useState("");
   const [reply, setReply] = useState("");
-  const [prevChats, setPrevChats] = useState([]);
+  const [prevChats, setPrevChats] = useState([])
 
   async function handleSubmit(event) {
     event.preventDefault();

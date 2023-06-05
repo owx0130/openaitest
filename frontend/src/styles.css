@@ -68,6 +68,7 @@ input {
 
 ul {
   width: auto;
+  max-width: 75%;
   margin: 0px;
   padding: 0px;
 }
