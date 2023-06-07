@@ -9,10 +9,6 @@ body {
   margin: 0;
 }
 
-.app {
-  display: flex;
-}
-
 .sidebar {
   background-color:black;
   margin: 0;
@@ -46,14 +42,22 @@ body {
 }
 
 .bottom-section {
-  width:100%;
+  width: 100%;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.form-style {
+  width: 100%;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
 }
 
 input {
   width: 75%;
-  margin-bottom: 50px;
+  margin-bottom: 30px;
   padding: 15px;
   border-radius: 5px;
   border: solid 0px;
@@ -67,4 +71,8 @@ ul {
   max-width: 75%;
   margin: 0px;
   padding: 0px;
+}
+
+h5 {
+  text-align: center;
 }

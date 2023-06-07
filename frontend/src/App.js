@@ -4,7 +4,7 @@ import Main from './components/main'
 
 export default function App() {
   return(
-    <div className="app">
+    <div style={{display:"flex"}}>
       <Sidebar />
       <Main />
     </div>

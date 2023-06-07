@@ -1,81 +1,76 @@
-const PORT = 8000
-const express = require("express")
-const cors = require("cors")
-const request = require("request")
-const { htmlToText } = require("html-to-text")
-const { Configuration, OpenAIApi } = require("openai")
-const app = express()
-app.use(express.json())
-app.use(cors())
+const PORT = 8000;
 
-const API_KEY = "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"
-const prevChats = []
-var newarticle = ""
+//Import all relevant libraries
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
+const { convert } = require("html-to-text");
+const { Configuration, OpenAIApi } = require("openai");
 
-const configuration = new Configuration({ apiKey: API_KEY })
-const openai = new OpenAIApi(configuration)
+//Set up Express.js server
+const app = express();
+app.use(express.json());
+app.use(cors());
 
+//Set up OpenAI API, prevChats array is used to store past messages from ChatGPT
+//to simulate conversation
+const API_KEY = "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";
+const configuration = new Configuration({ apiKey: API_KEY });
+const openai = new OpenAIApi(configuration);
+const prevChats = [];
+
+//POST request to OpenAI API
 app.post("/completions", async (req, res) => {
-
   try {
-    let prompt = JSON.stringify(req.body.content)
-    let start = prompt.indexOf("http")
-    console.log(start)
     //Isolate and remove empty prompts
-    if (prompt === "") {
-      throw new Error("No prompt provided!")
-    } else if (start >= 0) {
-      console.log("2")
+    if (req.body.content === "") throw new Error("No prompt provided!");
 
-      //If prompt contains a URL, replace it with text data to be read by the API
-      let articleUrl = prompt.substring(start, prompt.slice(start).indexOf(" ") + start)
-      console.log(articleUrl, "1")
-      request({
-        url: articleUrl,
-        method: "GET",
-      }, (error, response, body) => {
-        console.log("4")
-        const article = JSON.parse(body)
-        console.log("5")
-        newarticle = htmlToText(JSON.stringify(article.items[0].content_html).replace(/<[^>]+>/g,""))
-        console.log(newarticle)
-      })
-      
-      let newcontent = req.body.content.replace(articleUrl, newarticle)
-      req.body.content = newcontent
-      console.log(req.body, "6")
+    //If article link is provided, retrieve and clean raw text data. If not,
+    //simply push the role and prompt into prevChats array
+    if (req.body.link != "") {
+      //Use Axios GET to retrieve HTML data
+      axios.get(req.body.link).then((response) => {
+        //Use html-to-text to convert html data to raw text
+        const articleText = convert(response.data.items[0].content_html, {
+          selectors: [
+            { selector: "a", options: { ignoreHref: "true" } },
+            { selector: "img", format: "skip" },
+          ],
+        });
+        const cleanedText = articleText.replace(/\n/g, " ");
+        const newPrompt =
+          req.body.content +
+          " The article content is enclosed in triple backticks: ```" +
+          cleanedText +
+          "```";
+        prevChats.push({
+          role: "user",
+          content: newPrompt,
+        });
+      });
+    } else {
+      prevChats.push({
+        role: "user",
+        content: req.body.content,
+      });
     }
-
-    prevChats.push(req.body)
-    console.log(prevChats)
-    const response = await openai.createChatCompletion({
+    const reply = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      messages: prevChats
-    ,
+      messages: prevChats,
       max_tokens: 10,
       temperature: 0,
     });
-    console.log("hi")
-    prevChats.push(response.data.choices[0].message);
+    prevChats.push(reply.data.choices[0].message);
     console.log(prevChats);
-    res.send(response.data);
+    res.send(reply.data);
   } catch (error) {
     console.error(error.message);
   }
-})
+});
 
-app.get("/", (req, res) => {res.end(JSON.stringify(prevChats))})
-
-app.get("/getarticle", (req, res) => {
-  request({
-    url: articleUrl,
-    method: "GET",
-  }, (error, response, body) => {
-    const article = JSON.parse(body)
-    const newarticle = htmlToText(JSON.stringify(article.items[0].content_html).replace(/<[^>]+>/g,""))
-    res.end(body)
-    console.log(newarticle)
-  })
-})
+//GET request to print the previous conversations onto the screen
+app.get("/", (req, res) => {
+  res.end(JSON.stringify(prevChats));
+});
 
 app.listen(PORT, () => console.log("Your server is running on Port " + PORT));
