@@ -6,8 +6,6 @@ export default function Main() {
   const [articleURL, setArticleURL] = useState("");
   const [prevChats, setPrevChats] = useState([]);
 
-  console.log(prevChats);
-
   async function handleSubmit(event) {
     event.preventDefault();
     
@@ -25,11 +23,11 @@ export default function Main() {
 
     //Make Fetch API call to backend server
     const response = await fetch("http://localhost:8000/completions", options);
-    const data = await response.json();
+    const reply = await response.json();
     setPrevChats([
       ...prevChats,
       {role: "user", content: prompt},
-      {role: data.role, content: data.content}
+      {role: reply.role, content: reply.content}
     ])
     setPrompt("")
   }
