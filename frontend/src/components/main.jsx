@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Feed from "./feed";
 
 export default function Main() {
   const [prompt, setPrompt] = useState("");
   const [articleURL, setArticleURL] = useState("");
-  const [reply, setReply] = useState("");
   const [prevChats, setPrevChats] = useState([]);
+
+  console.log(prevChats);
 
   async function handleSubmit(event) {
     event.preventDefault();
-
+    
     //Set up options for POST request with Fetch API
     const options = {
       method: "POST",
@@ -21,29 +22,17 @@ export default function Main() {
         "Content-type": "application/json",
       },
     };
+
+    //Make Fetch API call to backend server
     const response = await fetch("http://localhost:8000/completions", options);
     const data = await response.json();
-    setReply(data.choices[0].message.content);
+    setPrevChats([
+      ...prevChats,
+      {role: "user", content: prompt},
+      {role: data.role, content: data.content}
+    ])
+    setPrompt("")
   }
-
-  console.log(prevChats);
-
-  useEffect(() => {
-    if (prompt && reply) {
-      setPrevChats((prevChats) => [
-        ...prevChats,
-        {
-          role: "user",
-          content: prompt,
-        },
-        {
-          role: "assistant",
-          content: reply,
-        },
-      ]);
-      setPrompt("");
-    }
-  }, [reply]);
 
   return (
     <div className="main">

@@ -30,7 +30,14 @@ body {
   justify-content: space-between;
 }
 
-.newChatButton {
+.button-container {
+  width: 100%;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.button-style {
   margin-top: 25px;
   padding: 10px;
   width: 50%;
