@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap');
+
+* {
+  font-family: "Open Sans", sans-serif;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar {
+  background-color:black;
+  margin: 0;
+  height: 100vh;
+  width: 550px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.main {
+  background-color:darkgrey;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.button-container {
+  width: 100%;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.button-style {
+  margin-top: 25px;
+  padding: 10px;
+  width: 50%;
+  background-color: transparent;
+  color: whitesmoke;
+  border: solid 0.5px rgba(255,255,255,0.7);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.bottom-section {
+  width: 100%;
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.form-style {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+input {
+  width: 75%;
+  margin-bottom: 30px;
+  padding: 15px;
+  border-radius: 5px;
+  border: solid 0px;
+  outline: none;
+  background-color:aliceblue;
+  box-shadow: 5px 5px 5px rgba(0,0,0,0.2);
+}
+
+ul {
+  width: auto;
+  max-width: 75%;
+  margin: 0px;
+  padding: 0px;
+}
+
+h5 {
+  text-align: center;
+}
