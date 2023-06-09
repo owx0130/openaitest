@@ -34,7 +34,7 @@ export default function Main() {
 
   return (
     <div className="main">
-      <h1>Chat Completion Model</h1>
+      <h1>RSS Feed Summarizer</h1>
       <div className="bottom-section">
         <ul>
           {prevChats.map((element, index) => (
@@ -46,7 +46,7 @@ export default function Main() {
             value={articleURL}
             onChange={(e) => setArticleURL(e.target.value)}
             type="text"
-            placeholder="insert article link here (if any): https://..."
+            placeholder="insert RSS feed link here to summarize articles (if any): https://..."
           />
           <input
             value={prompt}
