@@ -1,7 +1,7 @@
 //Import relevant libraries
 const express = require("express");
 const cors = require("cors");
-const { handleRSS, handleLinks, callOpenAI } = require("./lib");
+const { handleRSS, handleLinks, callChatCompletion } = require("./lib");
 
 //Set up Express.js server
 const PORT = 8000;
@@ -9,28 +9,30 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-//Declare global variables
+//Declare global variables. prevChats will store previous prompts and replies to facilitate
+//conversation with ChatGPT.
 const prevChats = [];
-const ARTICLE_URL = "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/json";
 
 //POST request to OpenAI API
 app.post("/completions", async (req, res) => {
   try {
     //Isolate and remove empty prompts
-    if (req.body.content === "") throw new Error("No prompt provided!");
+    if (req.body.content == "" && req.body.link == "")
+      throw new Error("No prompt or link provided!");
 
-    //Store article links from RSS Feed in articleLinks array. If no
-    //link is provided, simply send the prompt to OpenAI API.
     if (req.body.link != "") {
-      const articleLinks = await handleRSS(ARTICLE_URL);
-      handleLinks(articleLinks);
-    } else {
-      prevChats.push({ role: "user", content: req.body.content });
-      const reply = await callOpenAI(prevChats);
-      prevChats.push(reply);
-      console.log(prevChats);
-      res.send(reply);
-    }
+      //Store article URLs in articleLinks
+      const articleLinks = await handleRSS(req.body.link);
+      console.log(articleLinks)
+      const fullArticle = await handleLinks(articleLinks);
+      const newPrompt = req.body.content + " The articles are separated by triple backticks." + fullArticle;
+      prevChats.push({ role: "user", content: newPrompt });
+    } else prevChats.push({ role: "user", content: req.body.content });
+
+    //const reply = await callChatCompletion(prevChats);
+    //prevChats.push(reply);
+    console.log(prevChats);
+    //res.send(reply);
   } catch (error) {
     console.error(error.message);
   }

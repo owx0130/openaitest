@@ -12,7 +12,7 @@ body {
 .sidebar {
   background-color:black;
   margin: 0;
-  height: 100vh;
+  height: auto;
   width: 550px;
   display: flex;
   flex-direction: column;
@@ -28,6 +28,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  overflow: auto;
 }
 
 .button-container {
@@ -82,4 +83,9 @@ ul {
 
 h5 {
   text-align: center;
+}
+
+p {
+  color: whitesmoke;
+  max-width: 75%;
 }
