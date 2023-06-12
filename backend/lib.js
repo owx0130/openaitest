@@ -8,7 +8,7 @@ const API_KEY = "";
 const configuration = new Configuration({ apiKey: API_KEY });
 const openai = new OpenAIApi(configuration);
 
-//This function gets data from the RSS JSONfeed link, and stores all article links
+//This function retrieves data from the RSS JSONfeed link, and stores all article links
 //in an array
 async function handleJSONFeed(link) {
   const articleLinks = [];
@@ -17,6 +17,12 @@ async function handleJSONFeed(link) {
     articleContainer.forEach((article) => articleLinks.push(article.url));
   });
   return articleLinks;
+}
+
+//This function retrieves data from the RSS XML link, and stores all article links
+//in an array
+async function handleXMLFeed(link) {
+  const articleLinks = [];
 }
 
 //This function takes in an array of article links, extracts the relevant information
@@ -47,4 +53,4 @@ async function callChatCompletion(prevChats) {
   return response.data.choices[0].message;
 }
 
-module.exports = { handleJSONFeed, handleLinks, callChatCompletion };
+module.exports = { handleJSONFeed, handleXMLFeed, handleLinks, callChatCompletion };
