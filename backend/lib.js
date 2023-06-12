@@ -10,7 +10,7 @@ const openai = new OpenAIApi(configuration);
 
 //This function gets data from the RSS JSONfeed link, and stores all article links
 //in an array
-async function handleRSS(link) {
+async function handleJSONFeed(link) {
   const articleLinks = [];
   await axios.get(link).then((response) => {
     const articleContainer = response.data.items;
@@ -47,4 +47,4 @@ async function callChatCompletion(prevChats) {
   return response.data.choices[0].message;
 }
 
-module.exports = { handleRSS, handleLinks, callChatCompletion };
+module.exports = { handleJSONFeed, handleLinks, callChatCompletion };
