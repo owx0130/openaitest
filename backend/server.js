@@ -1,7 +1,13 @@
 //Import relevant libraries
 const express = require("express");
 const cors = require("cors");
-const { handleJSONFeed, handleXMLFeed, handleLinks, callChatCompletion } = require("./lib");
+const {
+  handleJSONFeed,
+  handleXMLFeed,
+  handleLinks,
+  makeNewPrompt,
+  callChatCompletion,
+} = require("./lib");
 
 //Set up Express.js server
 const PORT = 8000;
@@ -25,10 +31,7 @@ app.post("/JSONcompletions", async (req, res) => {
     const fullArticle = await handleLinks(articleLinks);
 
     //Form new prompt to pass into OpenAI API
-    const newPrompt =
-      req.body.content +
-      " The articles are separated by triple backticks." +
-      fullArticle;
+    const newPrompt = makeNewPrompt(req.body.content, fullArticle);
     prevChats.push({ role: "user", content: newPrompt });
 
     //Call Chat Completion API and send the response back to frontend
@@ -50,7 +53,18 @@ app.post("/XMLcompletions", async (req, res) => {
     
     //Store article URLs in articleLinks, then extract article data from the links
     const articleLinks = await handleXMLFeed(req.body.link);
+    articleLinks.shift();
+    const fullArticle = await handleLinks(articleLinks);
 
+    //Form new prompt to pass into OpenAI API
+    const newPrompt = makeNewPrompt(req.body.content, fullArticle);
+    prevChats.push({ role: "user", content: newPrompt });
+
+    //Call Chat Completion API and send the response back to frontend
+    const reply = await callChatCompletion(prevChats);
+    prevChats.push(reply);
+    console.log(prevChats);
+    res.send(reply);
   } catch (error) {
     console.error(error.message);
   }
@@ -61,7 +75,7 @@ app.post("/completions", async (req, res) => {
   try {
     //Isolate and remove empty prompt fields
     if (req.body.content == "") throw new Error("No prompt provided!");
-    
+
     //Call Chat Completion API and send the response back to frontend
     prevChats.push({ role: "user", content: req.body.content });
     const reply = await callChatCompletion(prevChats);

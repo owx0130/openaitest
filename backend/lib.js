@@ -23,6 +23,12 @@ async function handleJSONFeed(link) {
 //in an array
 async function handleXMLFeed(link) {
   const articleLinks = [];
+  const response = await axios.get(link);
+  const dom = new JSDOM(response.data, { contentType: "text/xml" });
+  const document = dom.window.document;
+  const linksContainer = document.querySelectorAll("link");
+  linksContainer.forEach((link) => articleLinks.push(link.textContent));
+  return articleLinks;
 }
 
 //This function takes in an array of article links, extracts the relevant information
@@ -37,9 +43,17 @@ async function handleLinks(articleLinks) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    i == 1 ? fullArticle += "```" : fullArticle += "``` ```";
-  };
+    i == 1 ? (fullArticle += "```") : (fullArticle += "``` ```");
+  }
   return fullArticle;
+}
+
+function makeNewPrompt(oldPrompt, fullArticle) {
+  const newPrompt =
+    oldPrompt +
+    " The articles are separated by triple backticks." +
+    fullArticle;
+  return newPrompt;
 }
 
 //Call the OpenAI API Chat Completion function
@@ -53,4 +67,10 @@ async function callChatCompletion(prevChats) {
   return response.data.choices[0].message;
 }
 
-module.exports = { handleJSONFeed, handleXMLFeed, handleLinks, callChatCompletion };
+module.exports = {
+  handleJSONFeed,
+  handleXMLFeed,
+  handleLinks,
+  makeNewPrompt,
+  callChatCompletion,
+};
