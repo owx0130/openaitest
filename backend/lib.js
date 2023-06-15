@@ -2,9 +2,10 @@
 const axios = require("axios");
 const { Configuration, OpenAIApi } = require("openai");
 const { JSDOM } = require("jsdom");
+require("dotenv").config();
 
 //Set up OpenAI API
-const API_KEY = "";
+const API_KEY = process.env.API_KEY;
 const configuration = new Configuration({ apiKey: API_KEY });
 const openai = new OpenAIApi(configuration);
 
@@ -35,7 +36,7 @@ async function handleXMLFeed(link) {
 //from every article (capped at 2), and returns a string with all the content
 async function handleLinks(articleLinks) {
   let fullArticle = "```";
-  for (let i = 0; i <= 1; i++) {
+  for (let i = 0; i <= 0; i++) {
     const response = await axios.get(articleLinks[i]);
     const dom = new JSDOM(response.data);
     const document = dom.window.document;
@@ -43,7 +44,7 @@ async function handleLinks(articleLinks) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    i == 1 ? (fullArticle += "```") : (fullArticle += "``` ```");
+    i == 0 ? (fullArticle += "```") : (fullArticle += "``` ```");
   }
   return fullArticle;
 }
@@ -61,7 +62,6 @@ async function callChatCompletion(prevChats) {
   const response = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
     messages: prevChats,
-    max_tokens: 10,
     temperature: 0,
   });
   return response.data.choices[0].message;
