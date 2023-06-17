@@ -2,10 +2,8 @@
 const express = require("express");
 const cors = require("cors");
 const {
-  handleJSONFeed,
-  handleXMLFeed,
-  handleLinks,
-  makeNewPrompt,
+  getArticleData,
+  getArticleContent,
   callChatCompletion,
 } = require("./lib");
 
@@ -18,57 +16,9 @@ app.use(cors());
 //Declare global variables. prevChats will store previous prompts and replies to facilitate
 //conversation with ChatGPT.
 const prevChats = [];
-
-//POST request to OpenAI API (for JSONfeed links)
-app.post("/JSONcompletions", async (req, res) => {
-  try {
-    //Isolate and remove empty prompt or link fields
-    if (req.body.content == "" || req.body.link == "")
-      throw new Error("No prompt or link provided!");
-
-    //Store article URLs in articleLinks, then extract article data from the links
-    const articleLinks = await handleJSONFeed(req.body.link);
-    const fullArticle = await handleLinks(articleLinks);
-
-    //Form new prompt to pass into OpenAI API
-    const newPrompt = makeNewPrompt(req.body.content, fullArticle);
-    prevChats.push({ role: "user", content: newPrompt });
-
-    //Call Chat Completion API and send the response back to frontend
-    const reply = await callChatCompletion(prevChats);
-    prevChats.push(reply);
-    console.log(prevChats);
-    res.send(reply);
-  } catch (error) {
-    console.error(error.message);
-  }
-});
-
-//POST request to OpenAI API (for XML links)
-app.post("/XMLcompletions", async (req, res) => {
-  try {
-    //Isolate and remove empty prompt or link fields
-    if (req.body.content == "" || req.body.link == "")
-      throw new Error("No prompt or link provided!");
-    
-    //Store article URLs in articleLinks, then extract article data from the links
-    const articleLinks = await handleXMLFeed(req.body.link);
-    articleLinks.shift();
-    const fullArticle = await handleLinks(articleLinks);
-
-    //Form new prompt to pass into OpenAI API
-    const newPrompt = makeNewPrompt(req.body.content, fullArticle);
-    prevChats.push({ role: "user", content: newPrompt });
-
-    //Call Chat Completion API and send the response back to frontend
-    const reply = await callChatCompletion(prevChats);
-    prevChats.push(reply);
-    console.log(prevChats);
-    res.send(reply);
-  } catch (error) {
-    console.error(error.message);
-  }
-});
+const URLcontainer = [
+  "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
+];
 
 //POST request to OpenAI API (for regular chat completions)
 app.post("/completions", async (req, res) => {
@@ -87,11 +37,13 @@ app.post("/completions", async (req, res) => {
   }
 });
 
-//GET request to print out prevChats array
-app.get("/", (req, res) => {
-  res.end(JSON.stringify(prevChats));
+//GET request for infrastructure-related articles
+app.get("/infrastructure", async (req, res) => {
+  let articleTitles = [];
+  let articleLinks = [];
+  await getArticleData(URLcontainer[0], articleLinks, articleTitles);
+  const articleContent = await getArticleContent(articleLinks);
+  res.send([articleContent, articleLinks, articleTitles]);
 });
-
-app.listen(PORT, () => console.log("Your server is running on Port " + PORT));
 
 app.listen(PORT, () => console.log("Your server is running on Port " + PORT));

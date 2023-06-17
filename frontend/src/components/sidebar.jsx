@@ -1,13 +1,19 @@
+import { Link } from "react-router-dom";
+
 export default function Sidebar() {
   return (
     <div className="sidebar">
       <h2 style={{ color: "whitesmoke", marginTop: "21.44px" }}>Welcome!</h2>
-      <p style={{textAlign:"justify"}}>
-        This application can be used to summarize articles from a given RSS feed
-        link. The given link can be in JSONfeed or XML format, select the
-        buttons accordingly depending on which format you wish to use.
-      </p>
-      <p>ChatGPT Clone using OpenAI API</p>
+      <div className="sidebar-button-container">
+        <Link to="/">
+          <button className="sidebar-button">Chatbot Function</button>
+        </Link>
+        <p>RSS Feed Categories</p>
+        <Link to="/infrastructure">
+          <button className="sidebar-button">Infrastructure</button>
+        </Link>
+      </div>
+      <p style={{ color: "whitesmoke" }}>ChatGPT Clone using OpenAI API</p>
     </div>
   );
 }

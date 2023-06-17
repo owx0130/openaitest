@@ -1,12 +1,15 @@
-import './styles.css'
-import Sidebar from './components/sidebar'
-import Main from './components/main'
+import "./styles.css";
+import Home from "./pages/Home";
+import Infrastructure from "./pages/Infrastructure";
+import { Routes, Route } from "react-router-dom";
 
 export default function App() {
-  return(
-    <div style={{display:"flex"}}>
-      <Sidebar />
-      <Main />
-    </div>
-  )
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/infrastructure" element={<Infrastructure />} />
+      </Routes>
+    </>
+  );
 }

@@ -9,34 +9,23 @@ const API_KEY = process.env.API_KEY;
 const configuration = new Configuration({ apiKey: API_KEY });
 const openai = new OpenAIApi(configuration);
 
-//This function retrieves data from the RSS JSONfeed link, and stores all article links
-//in an array
-async function handleJSONFeed(link) {
-  const articleLinks = [];
-  await axios.get(link).then((response) => {
-    const articleContainer = response.data.items;
-    articleContainer.forEach((article) => articleLinks.push(article.url));
-  });
-  return articleLinks;
-}
-
-//This function retrieves data from the RSS XML link, and stores all article links
-//in an array
-async function handleXMLFeed(link) {
-  const articleLinks = [];
-  const response = await axios.get(link);
-  const dom = new JSDOM(response.data, { contentType: "text/xml" });
+async function getArticleData(url, articleLinks, articleTitles) {
+  const response = await axios.get(url);
+  const dom = new JSDOM(response.data);
   const document = dom.window.document;
-  const linksContainer = document.querySelectorAll("link");
-  linksContainer.forEach((link) => articleLinks.push(link.textContent));
-  return articleLinks;
+  const elementContainer = document.querySelectorAll("a.title_link.bluelink");
+  elementContainer.forEach((elem) => {
+    articleTitles.push(elem.textContent);
+    articleLinks.push(elem.getAttribute("href"));
+  });
 }
 
-//This function takes in an array of article links, extracts the relevant information
-//from every article (capped at 2), and returns a string with all the content
-async function handleLinks(articleLinks) {
-  let fullArticle = "```";
-  for (let i = 0; i <= 0; i++) {
+//This function takes in an array of article links, extracts relevant information,
+//and stores the content in an array
+async function getArticleContent(articleLinks) {
+  let articleContainer = [];
+  for (let i = 0; i <= 1; i++) {
+    let fullArticle = "";
     const response = await axios.get(articleLinks[i]);
     const dom = new JSDOM(response.data);
     const document = dom.window.document;
@@ -44,17 +33,9 @@ async function handleLinks(articleLinks) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    i == 0 ? (fullArticle += "```") : (fullArticle += "``` ```");
+    articleContainer.push(fullArticle);
   }
-  return fullArticle;
-}
-
-function makeNewPrompt(oldPrompt, fullArticle) {
-  const newPrompt =
-    oldPrompt +
-    " The articles are separated by triple backticks." +
-    fullArticle;
-  return newPrompt;
+  return articleContainer;
 }
 
 //Call the OpenAI API Chat Completion function
@@ -68,11 +49,7 @@ async function callChatCompletion(prevChats) {
 }
 
 module.exports = {
-  handleJSONFeed,
-  handleXMLFeed,
-  handleLinks,
-  makeNewPrompt,
+  getArticleData,
+  getArticleContent,
   callChatCompletion,
 };
-
-module.exports = { handleRSS, handleLinks, callOpenAI };

@@ -9,6 +9,10 @@ body {
   margin: 0;
 }
 
+.app {
+  display: flex;
+}
+
 .sidebar {
   background-color:black;
   margin: 0;
@@ -92,6 +96,38 @@ ul {
   padding: 0px;
 }
 
-h5 {
+p {
   text-align: center;
+  color: whitesmoke;
+}
+
+.sidebar-button-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sidebar-button {
+  margin: 5px;
+  padding: 10px;
+  width: 50%;
+  background-color: transparent;
+  color: whitesmoke;
+  border: solid 0.5px whitesmoke;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+a {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  text-decoration: none;
+}
+
+table, th, td, tr {
+  max-width: 85%;
+  border: solid 1px black;
+  border-collapse: collapse;
 }
