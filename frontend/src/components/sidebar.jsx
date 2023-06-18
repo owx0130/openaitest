@@ -12,6 +12,9 @@ export default function Sidebar() {
         <Link to="/infrastructure">
           <button className="sidebar-button">Infrastructure</button>
         </Link>
+        <Link to="/space">
+          <button className="sidebar-button">Space</button>
+        </Link>
       </div>
       <p style={{ color: "whitesmoke" }}>ChatGPT Clone using OpenAI API</p>
     </div>

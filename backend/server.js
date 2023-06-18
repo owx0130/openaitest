@@ -18,7 +18,9 @@ app.use(cors());
 const prevChats = [];
 const URLcontainer = [
   "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
+  "https://www.inoreader.com/stream/user/1005506540/tag/Space/view/html",
 ];
+const endpoints = ["/infrastructure", "/space"];
 
 //POST request to OpenAI API (for regular chat completions)
 app.post("/completions", async (req, res) => {
@@ -38,10 +40,14 @@ app.post("/completions", async (req, res) => {
 });
 
 //GET request for infrastructure-related articles
-app.get("/infrastructure", async (req, res) => {
+app.get(endpoints, async (req, res) => {
   let articleTitles = [];
   let articleLinks = [];
-  await getArticleData(URLcontainer[0], articleLinks, articleTitles);
+  await getArticleData(
+    req.path == "/infrastructure" ? URLcontainer[0] : URLcontainer[1],
+    articleLinks,
+    articleTitles
+  );
   const articleContent = await getArticleContent(articleLinks);
   res.send([articleContent, articleLinks, articleTitles]);
 });
