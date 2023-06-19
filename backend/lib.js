@@ -1,15 +1,21 @@
-//Import relevant libraries
+//Import dependencies
 const axios = require("axios");
 const { Configuration, OpenAIApi } = require("openai");
 const { JSDOM } = require("jsdom");
 require("dotenv").config();
 
-//Set up OpenAI API
+//Import Langchain requirements
+const { Document } = require("langchain/document");
+const { FaissStore } = require("langchain/vectorstores/faiss");
+const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
+
+//Set up
 const API_KEY = process.env.API_KEY;
 const configuration = new Configuration({ apiKey: API_KEY });
 const openai = new OpenAIApi(configuration);
+const embeddings = new OpenAIEmbeddings({ openAIApiKey:API_KEY })
 
-async function getArticleData(url, articleLinks, articleTitles) {
+async function getArticleMetadata(url, articleLinks, articleTitles) {
   const response = await axios.get(url);
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
@@ -20,10 +26,7 @@ async function getArticleData(url, articleLinks, articleTitles) {
   });
 }
 
-//This function takes in an array of article links, extracts relevant information,
-//and stores the content in an array
-async function getArticleContent(articleLinks) {
-  let articleContainer = [];
+async function getArticleContent(articleLinks, articleTitles, docContainer) {
   for (let i = 0; i <= 1; i++) {
     let fullArticle = "";
     const response = await axios.get(articleLinks[i]);
@@ -33,12 +36,38 @@ async function getArticleContent(articleLinks) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    articleContainer.push(fullArticle);
+    const docOutput = new Document({
+      pageContent: fullArticle,
+      metadata: { source: articleLinks[i], title: articleTitles[i]},
+    });
+    docContainer.push(docOutput);
   }
-  return articleContainer;
 }
 
-//Call the OpenAI API Chat Completion function
+//Driver function to extract documents and send back to frontend
+async function extractDocuments(url) {
+  let docContainer = [], articleTitles = [], articleLinks = [];
+  await getArticleMetadata(url, articleLinks, articleTitles);
+  await getArticleContent(articleLinks, articleTitles, docContainer);
+  return docContainer;
+}
+
+async function createNewVectorStore(docContainer) {
+  const vectorStore = await FaissStore.fromDocuments(
+    docContainer,
+    embeddings,
+  );
+  await vectorStore.save("./db");
+}
+
+async function loadVectorStore(directory) {
+  const loadedVectorStore = await FaissStore.load(
+    directory,
+    embeddings,
+  )
+  return loadedVectorStore;
+}
+
 async function callChatCompletion(prevChats) {
   const response = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
@@ -49,7 +78,8 @@ async function callChatCompletion(prevChats) {
 }
 
 module.exports = {
-  getArticleData,
-  getArticleContent,
+  extractDocuments,
+  createNewVectorStore,
+  loadVectorStore,
   callChatCompletion,
 };

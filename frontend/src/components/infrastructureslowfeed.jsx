@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 
-export default function SpaceFeed() {
+export default function InfrastructureSlowFeed() {
   const [articleContainer, setArticleContainer] = useState([]);
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
 
   function fetchArticles() {
-    fetch("http://localhost:8000/space").then(async (response) => {
+    fetch("http://localhost:8000/infrastructureslow").then(async (response) => {
       const data = await response.json();
-      setArticleContainer(data[0]);
-      setArticleLinks(data[1]);
-      setArticleTitles(data[2]);
+      setArticleContainer(Array.from(data.values(), item => item.pageContent));
+      setArticleTitles(Array.from(data.values(), item => item.metadata.title));
+      setArticleLinks(Array.from(data.values(), item => item.metadata.source));
     });
   }
 
@@ -20,7 +20,7 @@ export default function SpaceFeed() {
 
   return (
     <div className="main">
-      <h1>Space Feed</h1>
+      <h1>Infrastructure Feed</h1>
       <table>
         <tr>
           <th>Article Title</th>
