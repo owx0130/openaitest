@@ -52,6 +52,7 @@ async function extractDocuments(url) {
   return docContainer;
 }
 
+//NEED TO CHANGE
 async function createNewVectorStore(docContainer) {
   const vectorStore = await FaissStore.fromDocuments(
     docContainer,
@@ -60,6 +61,7 @@ async function createNewVectorStore(docContainer) {
   await vectorStore.save("./db");
 }
 
+//NEED TO CHANGE
 async function loadVectorStore(directory) {
   const loadedVectorStore = await FaissStore.load(
     directory,

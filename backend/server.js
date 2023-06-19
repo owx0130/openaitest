@@ -38,6 +38,7 @@ app.post("/completions", async (req, res) => {
   }
 });
 
+//NEED TO CHANGE
 app.get("/updatevectors", async (req, res) => {
   const docs = await extractDocuments(URLcontainer[0]);
   await createNewVectorStore(docs)
@@ -47,6 +48,7 @@ app.get("/updatevectors", async (req, res) => {
 //GET request for article feed
 app.get(endpoints, async (req, res) => {
   if (req.path == "/infrastructure") {
+    //NEED TO CHANGE
     const loadedVectorStore = await loadVectorStore("/db");
     console.log(loadedVectorStore)
 
