@@ -11,6 +11,6 @@
     "openai": "^3.2.1"
   },
   "scripts": {
-    "backend": "nodemon server.js --ignore db/"
+    "backend": "nodemon server.js"
   }
 }

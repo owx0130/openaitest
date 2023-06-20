@@ -5,21 +5,23 @@ export default function InfrastructureFeed() {
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
 
+  function setStates(data) {
+    setArticleContainer(Array.from(data.values(), item => item.pageContent));
+    setArticleTitles(Array.from(data.values(), item => item.metadata.title));
+    setArticleLinks(Array.from(data.values(), item => item.metadata.source));
+  }
+
   function fetchArticles() {
     fetch("http://localhost:8000/infrastructure").then(async (response) => {
       const data = await response.json();
-      setArticleContainer(Array.from(data.values(), item => item.pageContent));
-      setArticleTitles(Array.from(data.values(), item => item.metadata.title));
-      setArticleLinks(Array.from(data.values(), item => item.metadata.source));
+      setStates(data);
     });
   }
 
   function handleClick() {
-    fetch("http://localhost:8000/updatevectors").then(async (response) => {
+    fetch("http://localhost:8000/updateCSV").then(async (response) => {
       const data = await response.json();
-      setArticleContainer(Array.from(data.values(), item => item.pageContent));
-      setArticleTitles(Array.from(data.values(), item => item.metadata.title));
-      setArticleLinks(Array.from(data.values(), item => item.metadata.source));
+      setStates(data);
     });
   }
 

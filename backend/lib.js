@@ -1,19 +1,15 @@
 //Import dependencies
 const axios = require("axios");
+const fs = require("fs");
 const { Configuration, OpenAIApi } = require("openai");
+const { Document } = require("langchain/document");
 const { JSDOM } = require("jsdom");
 require("dotenv").config();
-
-//Import Langchain requirements
-const { Document } = require("langchain/document");
-const { FaissStore } = require("langchain/vectorstores/faiss");
-const { OpenAIEmbeddings } = require("langchain/embeddings/openai");
 
 //Set up
 const API_KEY = process.env.API_KEY;
 const configuration = new Configuration({ apiKey: API_KEY });
 const openai = new OpenAIApi(configuration);
-const embeddings = new OpenAIEmbeddings({ openAIApiKey:API_KEY })
 
 async function getArticleMetadata(url, articleLinks, articleTitles) {
   const response = await axios.get(url);
@@ -26,7 +22,8 @@ async function getArticleMetadata(url, articleLinks, articleTitles) {
   });
 }
 
-async function getArticleContent(articleLinks, articleTitles, docContainer) {
+async function getArticleContent(articleLinks, articleTitles) {
+  const docContainer = [];
   for (let i = 0; i <= 1; i++) {
     let fullArticle = "";
     const response = await axios.get(articleLinks[i]);
@@ -38,36 +35,46 @@ async function getArticleContent(articleLinks, articleTitles, docContainer) {
     });
     const docOutput = new Document({
       pageContent: fullArticle,
-      metadata: { source: articleLinks[i], title: articleTitles[i]},
+      metadata: { source: articleLinks[i], title: articleTitles[i] },
     });
     docContainer.push(docOutput);
   }
+  return docContainer;
 }
 
 //Driver function to extract documents and send back to frontend
 async function extractDocuments(url) {
-  let docContainer = [], articleTitles = [], articleLinks = [];
+  let articleTitles = [],
+    articleLinks = [];
   await getArticleMetadata(url, articleLinks, articleTitles);
-  await getArticleContent(articleLinks, articleTitles, docContainer);
+  const docContainer = await getArticleContent(articleLinks, articleTitles);
+  writeToCSV(docContainer);
   return docContainer;
 }
 
-//NEED TO CHANGE
-async function createNewVectorStore(docContainer) {
-  const vectorStore = await FaissStore.fromDocuments(
-    docContainer,
-    embeddings,
-  );
-  await vectorStore.save("./db");
+function writeToCSV(docContainer) {
+  const rows = Array.from(docContainer.values(), (item) => [
+    item.metadata.title,
+    item.metadata.source,
+    item.pageContent,
+  ]);
+  let csvContent = "";
+  rows.forEach((row) => {
+    csvContent += row.join(";;") + "\n";
+  });
+  fs.writeFileSync("data.csv", csvContent, "utf8");
+  console.log("CSV file has been written successfully.");
 }
 
-//NEED TO CHANGE
-async function loadVectorStore(directory) {
-  const loadedVectorStore = await FaissStore.load(
-    directory,
-    embeddings,
-  )
-  return loadedVectorStore;
+function readFromCSV() {
+  const rows = [];
+  const data = fs.readFileSync("data.csv", "utf8");
+  const lines = data.split("\n");
+  for (let i = 0; i < lines.length - 1; i++) {
+    const row = lines[i].split(";;");
+    rows.push(row);
+  }
+  return rows;
 }
 
 async function callChatCompletion(prevChats) {
@@ -81,7 +88,6 @@ async function callChatCompletion(prevChats) {
 
 module.exports = {
   extractDocuments,
-  createNewVectorStore,
-  loadVectorStore,
+  readFromCSV,
   callChatCompletion,
 };

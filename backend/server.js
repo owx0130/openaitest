@@ -1,12 +1,8 @@
 //Import relevant libraries
 const express = require("express");
 const cors = require("cors");
-const {
-  extractDocuments,
-  createNewVectorStore,
-  loadVectorStore,
-  callChatCompletion,
-} = require("./lib");
+const { extractDocuments, readFromCSV, callChatCompletion } = require("./lib");
+const { Document } = require("langchain/document");
 
 //Set up Express.js server
 const PORT = 8000;
@@ -38,28 +34,28 @@ app.post("/completions", async (req, res) => {
   }
 });
 
-//NEED TO CHANGE
-app.get("/updatevectors", async (req, res) => {
-  const docs = await extractDocuments(URLcontainer[0]);
-  await createNewVectorStore(docs)
-  res.send(docs);
-})
+//GET request to update article feed
+app.get("/updateCSV", async (req, res) => {
+  const docContainer = await extractDocuments(URLcontainer[0]);
+  res.send(docContainer);
+});
 
 //GET request for article feed
 app.get(endpoints, async (req, res) => {
   if (req.path == "/infrastructure") {
-    //NEED TO CHANGE
-    const loadedVectorStore = await loadVectorStore("/db");
-    console.log(loadedVectorStore)
-
-    const docs = Array.from(
-      loadedVectorStore.docstore._docs.values(),
-      (doc) => doc
-    );
-    res.send(docs);
+    const data = readFromCSV();
+    const docContainer = [];
+    data.forEach((item) => {
+      const doc = new Document({
+        pageContent: item[2],
+        metadata: { source: item[1], title: item[0] },
+      });
+      docContainer.push(doc);
+    });
+    res.send(docContainer);
   } else {
-    const docs = await extractDocuments(URLcontainer[0]);
-    res.send(docs);
+    const docContainer = await extractDocuments(URLcontainer[0]);
+    res.send(docContainer);
   }
 });
 
