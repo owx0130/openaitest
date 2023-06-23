@@ -113,3 +113,10 @@ table, th, td, tr {
   border-radius: 30px;
   cursor: pointer;
 }
+
+.summary-container {
+  margin-top: 50px;
+  margin-bottom: 50px;
+  max-width: 85%;
+  word-wrap: break-word;
+}

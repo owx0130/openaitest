@@ -4,13 +4,22 @@ export default function InfrastructureSlowFeed() {
   const [articleContainer, setArticleContainer] = useState([]);
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
+  const [summary, setSummary] = useState("");
 
   function fetchArticles() {
     fetch("http://localhost:8000/infrastructureslow").then(async (response) => {
       const data = await response.json();
-      setArticleContainer(Array.from(data.values(), item => item.pageContent));
-      setArticleTitles(Array.from(data.values(), item => item.metadata.title));
-      setArticleLinks(Array.from(data.values(), item => item.metadata.source));
+      console.log(data);
+      setArticleContainer(
+        Array.from(data[0].values(), (item) => item.pageContent)
+      );
+      setArticleTitles(
+        Array.from(data[0].values(), (item) => item.metadata.title)
+      );
+      setArticleLinks(
+        Array.from(data[0].values(), (item) => item.metadata.source)
+      );
+      setSummary(data[1]);
     });
   }
 
@@ -22,22 +31,28 @@ export default function InfrastructureSlowFeed() {
     <div className="main">
       <h1>Infrastructure Feed</h1>
       <table>
-        <tr>
-          <th>Article Title</th>
-          <th>URL</th>
-          <th>Description</th>
-        </tr>
-        {articleContainer.map((element, index) => (
+        <thead>
           <tr>
-            <td>{articleTitles[index]}</td>
-            <td>
-              <a href={articleLinks[index]}>{articleLinks[index]}</a>
-            </td>
-            <td>{element}</td>
+            <th>Article Title</th>
+            <th>URL</th>
+            <th>Description</th>
           </tr>
-        ))}
+        </thead>
+        <tbody>
+          {articleContainer.map((element, index) => (
+            <tr>
+              <td>{articleTitles[index]}</td>
+              <td>
+                <a href={articleLinks[index]}>{articleLinks[index]}</a>
+              </td>
+              <td>{element}</td>
+            </tr>
+          ))}
+        </tbody>
       </table>
-      <div></div>
+      <div className="summary-container">
+        <p>Overall Summary: {summary}</p>
+      </div>
     </div>
   );
 }
