@@ -58,7 +58,7 @@ async function getArticleContent(docContainer) {
   }
 }
 
-//Update CSV database. This replaces all existing content in the current CSV file.
+//Update CSV database. This replaces all existing content in the current CSV file
 function writeToCSV(docContainer, directory, summary) {
   const rows = Array.from(docContainer.values(), (item) => [
     item.metadata.title,
@@ -74,7 +74,7 @@ function writeToCSV(docContainer, directory, summary) {
   console.log("CSV file has been written successfully.");
 }
 
-//Read summarized content from CSV database.
+//Read summarized content from CSV database
 function readFromCSV() {
   const rows = [];
   const data = fs.readFileSync("summary.csv", "utf8");

@@ -15,12 +15,6 @@ const URLcontainer = [
 ];
 const endpoints = ["/infrastructure", "/infrastructureslow"];
 
-//GET request to update article feed
-app.get("/updateCSV", async (req, res) => {
-  const docContainer = await extractDocuments(URLcontainer[0]);
-  res.send(docContainer);
-});
-
 //GET request for article feed
 app.get(endpoints, async (req, res) => {
   if (req.path == "/infrastructure") {

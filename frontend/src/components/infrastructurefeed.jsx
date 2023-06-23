@@ -27,7 +27,7 @@ export default function InfrastructureFeed() {
   }
 
   function handleClick() {
-    fetch("http://localhost:8000/updateCSV").then(async (response) => {
+    fetch("http://localhost:8000/infrastructureslow").then(async (response) => {
       const data = await response.json();
       setStates(data);
     });
