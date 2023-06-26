@@ -22,11 +22,20 @@ const memory = new ConversationSummaryMemory({
   }),
 });
 const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
-const prompt =
-  PromptTemplate.fromTemplate(`When given a piece of text, the AI summarizes it succintly in under 30 words.
-  Human: {input}
-  AI:`);
-const chain = new LLMChain({ llm: model, prompt, memory });
+const summaryPrompt = PromptTemplate.fromTemplate(
+  `Summarize the given text succintly in under 30 words: {input}`
+);
+const inferringPrompt = PromptTemplate.fromTemplate(
+  `Given a piece of text, extract the relevant categories from it. Give your response
+  in the format as follows: "A, B, C" where A, B and C denote different categories.
+  Text: {input}`
+);
+const summaryChain = new LLMChain({
+  llm: model,
+  prompt: summaryPrompt,
+  memory,
+});
+const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
 
 //Get article metadata (i.e. title and source URL)
 async function getArticleMetadata(url, docContainer) {
@@ -34,18 +43,23 @@ async function getArticleMetadata(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  elementContainer.forEach((elem) => {
+  for (let i = 0; i <= 0; i++) {
     const docOutput = new Document({
       pageContent: "",
-      metadata: { source: elem.getAttribute("href"), title: elem.textContent },
+      metadata: {
+        source: elementContainer[i].getAttribute("href"),
+        title: elementContainer[i].textContent,
+        rawcategories: "",
+        summcategories: "",
+      },
     });
     docContainer.push(docOutput);
-  });
+  };
 }
 
 //Extract the article content from the URLs
 async function getArticleContent(docContainer) {
-  for (let i = 0; i <= 0; i++) {
+  for (let i = 0; i < docContainer.length; i++) {
     let fullArticle = "";
     const response = await axios.get(docContainer[i].metadata.source);
     const dom = new JSDOM(response.data);
@@ -54,7 +68,7 @@ async function getArticleContent(docContainer) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    docContainer[i].pageContent = fullArticle;
+    docContainer[i].pageContent = fullArticle.replace(/\n/g,"");
   }
 }
 
@@ -63,6 +77,8 @@ function writeToCSV(docContainer, directory, summary) {
   const rows = Array.from(docContainer.values(), (item) => [
     item.metadata.title,
     item.metadata.source,
+    item.metadata.rawcategories,
+    item.metadata.summcategories,
     item.pageContent,
   ]);
   let csvContent = "";
@@ -86,8 +102,8 @@ function readFromCSV() {
   const docContainer = [];
   rows.forEach((item) => {
     const doc = new Document({
-      pageContent: item[2],
-      metadata: { source: item[1], title: item[0] },
+      pageContent: item[4],
+      metadata: { source: item[1], title: item[0], rawcategories: item[2], summcategories: item[3] },
     });
     docContainer.push(doc);
   });
@@ -101,8 +117,14 @@ async function summarizeArticles(docContainer) {
     (item) => item.pageContent
   );
   for (i = 0; i < articleContent.length; i++) {
-    const res1 = await chain.call({ input: articleContent[i] });
-    docContainer[i].pageContent = res1.text;
+    if (articleContent[i] != undefined) {
+      const res1 = await summaryChain.call({ input: articleContent[i] });
+      const res2 = await inferringChain.call({ input: articleContent[i] });
+      const res3 = await inferringChain.call({ input: res1.text });
+      docContainer[i].pageContent = res1.text.replace(/\n/g,"");
+      docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g,"");
+      docContainer[i].metadata.summcategories = res3.text.replace(/\n/g,"");
+    }
   }
   const data = await memory.loadMemoryVariables();
   const summary = JSON.stringify(data.chat_history);
@@ -115,9 +137,8 @@ async function extractDocuments(url) {
   await getArticleMetadata(url, docContainer);
   await getArticleContent(docContainer);
   writeToCSV(docContainer, "data.csv", "");
-  //const summary = await summarizeArticles(docContainer);
-  //writeToCSV(docContainer, "summary.csv", summary);
-  summary = "hi";
+  const summary = await summarizeArticles(docContainer);
+  writeToCSV(docContainer, "summary.csv", summary);
   return [docContainer, summary];
 }
 

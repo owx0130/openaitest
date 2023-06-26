@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 export default function InfrastructureFeed() {
   const [articleContainer, setArticleContainer] = useState([]);
+  const [articleCategoriesRaw, setArticleCategoriesRaw] = useState([]);
+  const [articleCategoriesSumm, setArticleCategoriesSumm] = useState([]);
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
   const [summary, setSummary] = useState("");
@@ -15,6 +17,12 @@ export default function InfrastructureFeed() {
     );
     setArticleLinks(
       Array.from(data[0].values(), (item) => item.metadata.source)
+    );
+    setArticleCategoriesRaw(
+      Array.from(data[0].values(), (item) => item.metadata.rawcategories)
+    );
+    setArticleCategoriesSumm(
+      Array.from(data[0].values(), (item) => item.metadata.summcategories)
     );
     setSummary(data[1]);
   }
@@ -49,6 +57,8 @@ export default function InfrastructureFeed() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
+            <th>Categories (from raw text)</th>
+            <th>Categories (from summary text)</th>
           </tr>
         </thead>
         <tbody>
@@ -59,6 +69,8 @@ export default function InfrastructureFeed() {
                 <a href={articleLinks[index]}>{articleLinks[index]}</a>
               </td>
               <td>{element}</td>
+              <td>{articleCategoriesRaw[index]}</td>
+              <td>{articleCategoriesSumm[index]}</td>
             </tr>
           ))}
         </tbody>
