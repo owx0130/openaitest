@@ -23,11 +23,12 @@ const memory = new ConversationSummaryMemory({
 });
 const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarize the given text succintly in under 30 words: {input}`
+  `Summarize the given text succintly in under 30 words.
+  Text: {input}`
 );
 const inferringPrompt = PromptTemplate.fromTemplate(
-  `Given a piece of text, extract the relevant categories from it. Give your response
-  in the format as follows: "A, B, C" where A, B and C denote different categories.
+  `Given a piece of text, infer the 5 most relevant categories from it. Give your response
+  in the format "X, X, X..."
   Text: {input}`
 );
 const summaryChain = new LLMChain({
@@ -48,13 +49,13 @@ async function getArticleMetadata(url, docContainer) {
       pageContent: "",
       metadata: {
         source: elementContainer[i].getAttribute("href"),
-        title: elementContainer[i].textContent,
+        title: "",
         rawcategories: "",
         summcategories: "",
       },
     });
     docContainer.push(docOutput);
-  };
+  }
 }
 
 //Extract the article content from the URLs
@@ -68,7 +69,8 @@ async function getArticleContent(docContainer) {
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
-    docContainer[i].pageContent = fullArticle.replace(/\n/g,"");
+    docContainer[i].pageContent = fullArticle.replace(/\n/g, "");
+    docContainer[i].metadata.title = document.querySelector("title").textContent;
   }
 }
 
@@ -103,7 +105,12 @@ function readFromCSV() {
   rows.forEach((item) => {
     const doc = new Document({
       pageContent: item[4],
-      metadata: { source: item[1], title: item[0], rawcategories: item[2], summcategories: item[3] },
+      metadata: {
+        source: item[1],
+        title: item[0],
+        rawcategories: item[2],
+        summcategories: item[3],
+      },
     });
     docContainer.push(doc);
   });
@@ -121,9 +128,11 @@ async function summarizeArticles(docContainer) {
       const res1 = await summaryChain.call({ input: articleContent[i] });
       const res2 = await inferringChain.call({ input: articleContent[i] });
       const res3 = await inferringChain.call({ input: res1.text });
-      docContainer[i].pageContent = res1.text.replace(/\n/g,"");
-      docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g,"");
-      docContainer[i].metadata.summcategories = res3.text.replace(/\n/g,"");
+      console.log(articleContent[i]);
+      docContainer[i].pageContent = res1.text.replace(/\n/g, "");
+      docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g, "");
+      docContainer[i].metadata.summcategories = res3.text.replace(/\n/g, "");
+      console.log(docContainer[i].metadata.rawcategories);
     }
   }
   const data = await memory.loadMemoryVariables();
@@ -142,7 +151,26 @@ async function extractDocuments(url) {
   return [docContainer, summary];
 }
 
+//Function to handle individual articles (for general usage)
+async function handleIndivArticle(url) {
+  const docContainer = [
+    new Document({
+      pageContent: "",
+      metadata: {
+        source: url,
+        title: "",
+        rawcategories: "",
+        summcategories: "",
+      },
+    }),
+  ];
+  await getArticleContent(docContainer);
+  await summarizeArticles(docContainer);
+  return docContainer[0];
+}
+
 module.exports = {
   extractDocuments,
   readFromCSV,
+  handleIndivArticle,
 };

@@ -1,7 +1,7 @@
 //Import relevant libraries
 const express = require("express");
 const cors = require("cors");
-const { extractDocuments, readFromCSV } = require("./lib");
+const { extractDocuments, readFromCSV, handleIndivArticle } = require("./lib");
 
 //Set up Express.js server
 const PORT = 8000;
@@ -24,6 +24,12 @@ app.get(endpoints, async (req, res) => {
     const reply = await extractDocuments(URLcontainer[0]);
     res.send(reply);
   }
+});
+
+//POST request for individual articles
+app.post("/articles", async (req, res) => {
+  const docOutput = await handleIndivArticle(req.body.content);
+  res.send(docOutput);
 });
 
 app.listen(PORT, () => console.log("Your server is running on Port " + PORT));

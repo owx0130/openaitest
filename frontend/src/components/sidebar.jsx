@@ -6,7 +6,7 @@ export default function Sidebar() {
       <h2 style={{ color: "whitesmoke", marginTop: "21.44px" }}>Welcome!</h2>
       <div className="sidebar-button-container">
         <Link to="/">
-          <button className="sidebar-button">Chatbot Function</button>
+          <button className="sidebar-button">Individual Article Extraction</button>
         </Link>
         <p>RSS Feed Categories</p>
         <Link to="/infrastructure">

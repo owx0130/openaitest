@@ -1,25 +1,15 @@
 import { useState } from "react";
-import Feed from "./feed";
 
 export default function Main() {
+  const [articleContainer, setArticleContainer] = useState("");
+  const [articleCategoriesRaw, setArticleCategoriesRaw] = useState("");
+  const [articleCategoriesSumm, setArticleCategoriesSumm] = useState("");
+  const [articleTitle, setArticleTitle] = useState("");
+  const [articleLink, setArticleLink] = useState("");
   const [prompt, setPrompt] = useState("");
-  const [prevChats, setPrevChats] = useState([]);
-
-  async function callAPI(options, link) {
-    const response = await fetch(link, options);
-    const reply = await response.json();
-    setPrevChats([
-      ...prevChats,
-      { role: "user", content: prompt },
-      { role: reply.role, content: reply.content },
-    ]);
-    setPrompt("");
-  }
 
   function handleSubmit(event) {
-    event.preventDefault();
-
-    //Set up options for POST request with Fetch API
+    event.preventDefault()
     const options = {
       method: "POST",
       body: JSON.stringify({
@@ -29,28 +19,49 @@ export default function Main() {
         "Content-type": "application/json",
       },
     };
-    callAPI(options, "http://localhost:8000/completions");
+    fetch("http://localhost:8000/articles", options).then(async (reponse) => {
+      const data = await reponse.json();
+      setArticleContainer(data.pageContent);
+      setArticleTitle(data.metadata.title);
+      setArticleLink(prompt);
+      setArticleCategoriesRaw(data.metadata.rawcategories);
+      setArticleCategoriesSumm(data.metadata.summcategories);
+      console.log(data)
+    });
   }
-
+  console.log(setArticleCategoriesRaw)
   return (
     <div className="main">
-      <h1>Chatbot Function</h1>
-      <div className="bottom-section">
-        <ul>
-          {prevChats.map((element, index) => (
-            <Feed key={index} data={element} />
-          ))}
-        </ul>
-        <form className="form-style" onSubmit={(e) => handleSubmit(e)}>
-          <input
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            type="text"
-            placeholder="prompt"
-          />
-          <input type="submit" hidden />
-        </form>
-      </div>
+      <h1>Individual Article Extraction</h1>
+      <table style={{ marginBottom: "30px" }}>
+        <thead>
+          <tr>
+            <th>Article Title</th>
+            <th>URL</th>
+            <th>Description</th>
+            <th>Categories (from raw text)</th>
+            <th>Categories (from summary text)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{articleTitle}</td>
+            <td>{articleLink}</td>
+            <td>{articleContainer}</td>
+            <td>{articleCategoriesRaw}</td>
+            <td>{articleCategoriesSumm}</td>
+          </tr>
+        </tbody>
+      </table>
+      <form className="form-style" onSubmit={(e) => handleSubmit(e)}>
+        <input
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          type="text"
+          placeholder="insert article link here"
+        />
+        <input type="submit" hidden />
+      </form>
     </div>
   );
 }
