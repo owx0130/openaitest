@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function Main() {
+export default function TranslationFeed() {
   const [articleContainer, setArticleContainer] = useState("");
   const [articleCategoriesRaw, setArticleCategoriesRaw] = useState("");
   const [articleCategoriesSumm, setArticleCategoriesSumm] = useState("");
@@ -19,20 +19,22 @@ export default function Main() {
         "Content-type": "application/json",
       },
     };
-    fetch("http://localhost:8000/indivarticle", options).then(async (reponse) => {
-      const data = await reponse.json();
-      setArticleContainer(data.pageContent);
-      setArticleTitle(data.metadata.title);
-      setArticleLink(prompt);
-      setArticleCategoriesRaw(data.metadata.rawcategories);
-      setArticleCategoriesSumm(data.metadata.summcategories);
-      console.log(data);
-    });
+    fetch("http://localhost:8000/translation", options).then(
+      async (reponse) => {
+        const data = await reponse.json();
+        setArticleContainer(data.pageContent);
+        setArticleTitle(data.metadata.title);
+        setArticleLink(prompt);
+        setArticleCategoriesRaw(data.metadata.rawcategories);
+        setArticleCategoriesSumm(data.metadata.summcategories);
+        console.log(data);
+      }
+    );
   }
-  
+
   return (
     <div className="main">
-      <h1>Individual Article Extraction</h1>
+      <h1>Translation (from CN to EN)</h1>
       <table style={{ marginBottom: "30px" }}>
         <thead>
           <tr>

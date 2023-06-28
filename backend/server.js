@@ -13,10 +13,11 @@ app.use(cors());
 const URLcontainer = [
   "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
 ];
-const endpoints = ["/infrastructure", "/infrastructureslow"];
+const rssEndpoints = ["/infrastructure", "/infrastructureslow"];
+const indivEndpoints = ["/indivarticle", "/translation"];
 
 //GET request for article feed
-app.get(endpoints, async (req, res) => {
+app.get(rssEndpoints, async (req, res) => {
   if (req.path == "/infrastructure") {
     const reply = readFromCSV();
     res.send(reply);
@@ -27,8 +28,8 @@ app.get(endpoints, async (req, res) => {
 });
 
 //POST request for individual articles
-app.post("/articles", async (req, res) => {
-  const docOutput = await handleIndivArticle(req.body.content);
+app.post(indivEndpoints, async (req, res) => {
+  const docOutput = await handleIndivArticle(req.body.content, req.path);
   res.send(docOutput);
 });
 

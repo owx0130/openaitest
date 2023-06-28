@@ -38,8 +38,8 @@ const summaryChain = new LLMChain({
 });
 const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
 
-//Get article metadata (i.e. title and source URL)
-async function getArticleMetadata(url, docContainer) {
+//Get individual article URLS from RSS Feed link
+async function getArticleLinks(url, docContainer) {
   const response = await axios.get(url);
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
@@ -58,7 +58,7 @@ async function getArticleMetadata(url, docContainer) {
   }
 }
 
-//Extract the article content from the URLs
+//Extract the article content from the URLs (article body, title)
 async function getArticleContent(docContainer) {
   for (let i = 0; i < docContainer.length; i++) {
     let fullArticle = "";
@@ -70,7 +70,8 @@ async function getArticleContent(docContainer) {
       fullArticle += para.textContent;
     });
     docContainer[i].pageContent = fullArticle.replace(/\n/g, "");
-    docContainer[i].metadata.title = document.querySelector("title").textContent;
+    docContainer[i].metadata.title =
+      document.querySelector("title").textContent;
   }
 }
 
@@ -117,22 +118,22 @@ function readFromCSV() {
   return [docContainer, lines[lines.length - 1]];
 }
 
-//Pass article content into OpenAI API to summarize
-async function summarizeArticles(docContainer) {
+//Pass article content into OpenAI API to summarize and infer categories
+async function callOpenAI(docContainer, endpoint) {
   const articleContent = Array.from(
     docContainer.values(),
     (item) => item.pageContent
   );
   for (i = 0; i < articleContent.length; i++) {
-    if (articleContent[i] != undefined) {
-      const res1 = await summaryChain.call({ input: articleContent[i] });
-      const res2 = await inferringChain.call({ input: articleContent[i] });
-      const res3 = await inferringChain.call({ input: res1.text });
-      console.log(articleContent[i]);
-      docContainer[i].pageContent = res1.text.replace(/\n/g, "");
-      docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g, "");
-      docContainer[i].metadata.summcategories = res3.text.replace(/\n/g, "");
-      console.log(docContainer[i].metadata.rawcategories);
+    const res1 = await summaryChain.call({ input: articleContent[i] });
+    const res2 = await inferringChain.call({ input: articleContent[i] });
+    const res3 = await inferringChain.call({ input: res1.text });
+    docContainer[i].pageContent = res1.text.replace(/\n/g, "");
+    docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g, "");
+    docContainer[i].metadata.summcategories = res3.text.replace(/\n/g, "");
+    if (endpoint == "/translation") {
+      //WIP
+      console.log("hello")
     }
   }
   const data = await memory.loadMemoryVariables();
@@ -140,19 +141,19 @@ async function summarizeArticles(docContainer) {
   return summary;
 }
 
-//Driver function to extract and save articles to CSV
+//Driver function to extract and save RSS Feed articles to CSV
 async function extractDocuments(url) {
   let docContainer = [];
-  await getArticleMetadata(url, docContainer);
+  await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
   writeToCSV(docContainer, "data.csv", "");
-  const summary = await summarizeArticles(docContainer);
+  const summary = await callOpenAI(docContainer);
   writeToCSV(docContainer, "summary.csv", summary);
   return [docContainer, summary];
 }
 
-//Function to handle individual articles (for general usage)
-async function handleIndivArticle(url) {
+//Drive function to handle individual articles
+async function handleIndivArticle(url, endpoint) {
   const docContainer = [
     new Document({
       pageContent: "",
@@ -165,7 +166,7 @@ async function handleIndivArticle(url) {
     }),
   ];
   await getArticleContent(docContainer);
-  await summarizeArticles(docContainer);
+  await callOpenAI(docContainer, endpoint);
   return docContainer[0];
 }
 

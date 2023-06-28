@@ -5,8 +5,14 @@ export default function Sidebar() {
     <div className="sidebar">
       <h2 style={{ color: "whitesmoke", marginTop: "21.44px" }}>Welcome!</h2>
       <div className="sidebar-button-container">
+        <p>Individual Articles</p>
+        <Link to="/translation">
+          <button className="sidebar-button">Translation (CN to EN)</button>
+        </Link>
         <Link to="/">
-          <button className="sidebar-button">Individual Article Extraction</button>
+          <button className="sidebar-button">
+            Individual Article (EN)
+          </button>
         </Link>
         <p>RSS Feed Categories</p>
         <Link to="/infrastructure">
