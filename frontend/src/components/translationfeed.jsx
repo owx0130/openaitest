@@ -5,6 +5,7 @@ export default function TranslationFeed() {
   const [articleCategoriesRaw, setArticleCategoriesRaw] = useState("");
   const [articleCategoriesSumm, setArticleCategoriesSumm] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
+  const [originalArticleTitle, setOriginalArticleTitle] = useState("");
   const [articleLink, setArticleLink] = useState("");
   const [prompt, setPrompt] = useState("");
 
@@ -24,6 +25,7 @@ export default function TranslationFeed() {
         const data = await reponse.json();
         setArticleContainer(data.pageContent);
         setArticleTitle(data.metadata.title);
+        setOriginalArticleTitle(data.metadata.translation[0].text);
         setArticleLink(prompt);
         setArticleCategoriesRaw(data.metadata.rawcategories);
         setArticleCategoriesSumm(data.metadata.summcategories);
@@ -47,7 +49,7 @@ export default function TranslationFeed() {
         </thead>
         <tbody>
           <tr>
-            <td>{articleTitle}</td>
+            <td>{originalArticleTitle}<br /><br />{articleTitle}</td>
             <td>
               <a href={articleLink}>{articleLink}</a>
             </td>

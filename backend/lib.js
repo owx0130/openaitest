@@ -23,12 +23,18 @@ const memory = new ConversationSummaryMemory({
 });
 const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarize the given text succintly in under 30 words.
+  `Summarize the given text succintly in under 50 words. Only summarize the bodies of text
+  that have more words, you may ignore the smaller bodies.
   Text: {input}`
 );
 const inferringPrompt = PromptTemplate.fromTemplate(
   `Given a piece of text, infer the 5 most relevant categories from it. Give your response
   in the format "X, X, X..."
+  Text: {input}`
+);
+const CNtoENPrompt = PromptTemplate.fromTemplate(
+  `You will be given a piece of Chinese text. Translate it to English.
+  Check that the sentence structure is correct before giving your response.
   Text: {input}`
 );
 const summaryChain = new LLMChain({
@@ -37,6 +43,7 @@ const summaryChain = new LLMChain({
   memory,
 });
 const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
+const CNtoENChain = new LLMChain({ llm: model, prompt: CNtoENPrompt });
 
 //Get individual article URLS from RSS Feed link
 async function getArticleLinks(url, docContainer) {
@@ -96,7 +103,7 @@ function writeToCSV(docContainer, directory, summary) {
 //Read summarized content from CSV database
 function readFromCSV() {
   const rows = [];
-  const data = fs.readFileSync("summary.csv", "utf8");
+  const data = fs.readFileSync("RSSsummary.csv", "utf8");
   const lines = data.split("\n");
   for (let i = 0; i < lines.length - 1; i++) {
     const row = lines[i].split(";;");
@@ -125,16 +132,20 @@ async function callOpenAI(docContainer, endpoint) {
     (item) => item.pageContent
   );
   for (i = 0; i < articleContent.length; i++) {
+    if (endpoint == "/translation") {
+      const rawText = articleContent[i];
+      const translatedText = await CNtoENChain.call({ input: rawText });
+      const rawTitle = docContainer[i].metadata.title;
+      const translatedTitle = await CNtoENChain.call({ input: rawTitle });
+      articleContent[i] = translatedText.text;
+      docContainer[i].metadata.translation.push(translatedTitle, translatedText);
+    }
     const res1 = await summaryChain.call({ input: articleContent[i] });
     const res2 = await inferringChain.call({ input: articleContent[i] });
     const res3 = await inferringChain.call({ input: res1.text });
     docContainer[i].pageContent = res1.text.replace(/\n/g, "");
     docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g, "");
     docContainer[i].metadata.summcategories = res3.text.replace(/\n/g, "");
-    if (endpoint == "/translation") {
-      //WIP
-      console.log("hello")
-    }
   }
   const data = await memory.loadMemoryVariables();
   const summary = JSON.stringify(data.chat_history);
@@ -146,25 +157,41 @@ async function extractDocuments(url) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
-  writeToCSV(docContainer, "data.csv", "");
+  writeToCSV(docContainer, "RSSraw.csv", "");
   const summary = await callOpenAI(docContainer);
-  writeToCSV(docContainer, "summary.csv", summary);
+  writeToCSV(docContainer, "RSSsummary.csv", summary);
   return [docContainer, summary];
 }
 
 //Drive function to handle individual articles
 async function handleIndivArticle(url, endpoint) {
-  const docContainer = [
-    new Document({
-      pageContent: "",
-      metadata: {
-        source: url,
-        title: "",
-        rawcategories: "",
-        summcategories: "",
-      },
-    }),
-  ];
+  const docContainer = [];
+  if (endpoint == "/translation") {
+    docContainer.push(
+      new Document({
+        pageContent: "",
+        metadata: {
+          source: url,
+          title: "",
+          rawcategories: "",
+          summcategories: "",
+          translation: [],
+        },
+      })
+    );
+  } else {
+    docContainer.push(
+      new Document({
+        pageContent: "",
+        metadata: {
+          source: url,
+          title: "",
+          rawcategories: "",
+          summcategories: "",
+        },
+      })
+    );
+  }
   await getArticleContent(docContainer);
   await callOpenAI(docContainer, endpoint);
   return docContainer[0];
