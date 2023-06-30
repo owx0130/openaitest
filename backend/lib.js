@@ -23,27 +23,35 @@ const memory = new ConversationSummaryMemory({
 });
 const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarize the given text succintly in under 50 words. Only summarize the bodies of text
-  that have more words, you may ignore the smaller bodies.
+  `Summarize the given text succintly in under 50 words.
   Text: {input}`
 );
 const inferringPrompt = PromptTemplate.fromTemplate(
-  `Given a piece of text, infer the 5 most relevant categories from it. Give your response
+  `Given a piece of text, infer only the 5 most relevant entities involved. Give your response
   in the format "X, X, X..."
   Text: {input}`
 );
-const CNtoENPrompt = PromptTemplate.fromTemplate(
-  `You will be given a piece of Chinese text. Translate it to English.
-  Check that the sentence structure is correct before giving your response.
+const CNtoENText = PromptTemplate.fromTemplate(
+  `You will be given a piece of Chinese text. Perform the following steps:
+  1. Translate the text to English.
+  2. On the translated text, correct all sentence structure and grammatical errors appropriately.
+  3. Provide the final text body as your response.
   Text: {input}`
 );
+const relevancyPrompt = PromptTemplate.fromTemplate(
+  `You will be given a short piece of text. Determine if the text is relevant to the
+  given category. Give your response only as a yes or no.
+  Text: {input}
+  Category: {category}`
+)
 const summaryChain = new LLMChain({
   llm: model,
   prompt: summaryPrompt,
   memory,
 });
 const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
-const CNtoENChain = new LLMChain({ llm: model, prompt: CNtoENPrompt });
+const CNtoENTextChain = new LLMChain({ llm: model, prompt: CNtoENText });
+const relevancyChain = new LLMChain({ llm: model, prompt: relevancyPrompt });
 
 //Get individual article URLS from RSS Feed link
 async function getArticleLinks(url, docContainer) {
@@ -51,14 +59,15 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= 0; i++) {
+  for (let i = 0; i <= 2; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
         source: elementContainer[i].getAttribute("href"),
         title: "",
-        rawcategories: "",
-        summcategories: "",
+        entitiesraw: "",
+        entitiessummary: "",
+        relevant: "",
       },
     });
     docContainer.push(docOutput);
@@ -87,8 +96,9 @@ function writeToCSV(docContainer, directory, summary) {
   const rows = Array.from(docContainer.values(), (item) => [
     item.metadata.title,
     item.metadata.source,
-    item.metadata.rawcategories,
-    item.metadata.summcategories,
+    item.metadata.entitiesraw,
+    item.metadata.entitiessummary,
+    item.metadata.relevant,
     item.pageContent,
   ]);
   let csvContent = "";
@@ -112,12 +122,13 @@ function readFromCSV() {
   const docContainer = [];
   rows.forEach((item) => {
     const doc = new Document({
-      pageContent: item[4],
+      pageContent: item[5],
       metadata: {
         source: item[1],
         title: item[0],
-        rawcategories: item[2],
-        summcategories: item[3],
+        entitiesraw: item[2],
+        entitiessummary: item[3],
+        relevant: item[4],
       },
     });
     docContainer.push(doc);
@@ -125,7 +136,7 @@ function readFromCSV() {
   return [docContainer, lines[lines.length - 1]];
 }
 
-//Pass article content into OpenAI API to summarize and infer categories
+//Pass article content into OpenAI API to perform various actions
 async function callOpenAI(docContainer, endpoint) {
   const articleContent = Array.from(
     docContainer.values(),
@@ -133,19 +144,23 @@ async function callOpenAI(docContainer, endpoint) {
   );
   for (i = 0; i < articleContent.length; i++) {
     if (endpoint == "/translation") {
-      const rawText = articleContent[i];
-      const translatedText = await CNtoENChain.call({ input: rawText });
-      const rawTitle = docContainer[i].metadata.title;
-      const translatedTitle = await CNtoENChain.call({ input: rawTitle });
+      const translatedTitle = await CNtoENTextChain.call({
+        input: docContainer[i].metadata.title,
+      });
+      const translatedText = await CNtoENTextChain.call({
+        input: articleContent[i],
+      });
       articleContent[i] = translatedText.text;
-      docContainer[i].metadata.translation.push(translatedTitle, translatedText);
+      docContainer[i].metadata.translatedtitle = translatedTitle.text;
     }
     const res1 = await summaryChain.call({ input: articleContent[i] });
     const res2 = await inferringChain.call({ input: articleContent[i] });
     const res3 = await inferringChain.call({ input: res1.text });
+    const res4 = await relevancyChain.call({ input: res1.text, category: "Infrastructure" });
     docContainer[i].pageContent = res1.text.replace(/\n/g, "");
-    docContainer[i].metadata.rawcategories = res2.text.replace(/\n/g, "");
-    docContainer[i].metadata.summcategories = res3.text.replace(/\n/g, "");
+    docContainer[i].metadata.entitiesraw = res2.text.replace(/\n/g, "");
+    docContainer[i].metadata.entitiessummary = res3.text.replace(/\n/g, "");
+    docContainer[i].metadata.relevant = res4.text.replace(/\n/g, "");
   }
   const data = await memory.loadMemoryVariables();
   const summary = JSON.stringify(data.chat_history);
@@ -173,9 +188,9 @@ async function handleIndivArticle(url, endpoint) {
         metadata: {
           source: url,
           title: "",
-          rawcategories: "",
-          summcategories: "",
-          translation: [],
+          translatedtitle: "",
+          entitiesraw: "",
+          entitiessummary: "",
         },
       })
     );
@@ -186,8 +201,8 @@ async function handleIndivArticle(url, endpoint) {
         metadata: {
           source: url,
           title: "",
-          rawcategories: "",
-          summcategories: "",
+          entitiesraw: "",
+          entitiessummary: "",
         },
       })
     );

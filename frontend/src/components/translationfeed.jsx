@@ -2,8 +2,8 @@ import { useState } from "react";
 
 export default function TranslationFeed() {
   const [articleContainer, setArticleContainer] = useState("");
-  const [articleCategoriesRaw, setArticleCategoriesRaw] = useState("");
-  const [articleCategoriesSumm, setArticleCategoriesSumm] = useState("");
+  const [articleEntities, setArticleEntities] = useState("");
+  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [originalArticleTitle, setOriginalArticleTitle] = useState("");
   const [articleLink, setArticleLink] = useState("");
@@ -25,10 +25,10 @@ export default function TranslationFeed() {
         const data = await reponse.json();
         setArticleContainer(data.pageContent);
         setArticleTitle(data.metadata.title);
-        setOriginalArticleTitle(data.metadata.translation[0].text);
+        setOriginalArticleTitle(data.metadata.translatedtitle);
         setArticleLink(prompt);
-        setArticleCategoriesRaw(data.metadata.rawcategories);
-        setArticleCategoriesSumm(data.metadata.summcategories);
+        setArticleEntities(data.metadata.entitiesraw);
+        setArticleEntitiesSummary(data.metadata.entitiessummary);
         console.log(data);
       }
     );
@@ -43,19 +43,24 @@ export default function TranslationFeed() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Categories (from raw text)</th>
-            <th>Categories (from summary text)</th>
+            <th>Entity Extraction (raw text)</th>
+            <th>Entity Extraction (summarised text)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>{originalArticleTitle}<br /><br />{articleTitle}</td>
+            <td>
+              {originalArticleTitle}
+              <br />
+              <br />
+              {articleTitle}
+            </td>
             <td>
               <a href={articleLink}>{articleLink}</a>
             </td>
             <td>{articleContainer}</td>
-            <td>{articleCategoriesRaw}</td>
-            <td>{articleCategoriesSumm}</td>
+            <td>{articleEntities}</td>
+            <td>{articleEntitiesSummary}</td>
           </tr>
         </tbody>
       </table>

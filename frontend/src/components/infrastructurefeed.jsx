@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 
 export default function InfrastructureFeed() {
   const [articleContainer, setArticleContainer] = useState([]);
-  const [articleCategoriesRaw, setArticleCategoriesRaw] = useState([]);
-  const [articleCategoriesSumm, setArticleCategoriesSumm] = useState([]);
+  const [articleEntities, setArticleEntities] = useState([]);
+  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState([]);
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
+  const [relevancy, setRelevancy] = useState([]);
   const [summary, setSummary] = useState("");
 
   function setStates(data) {
@@ -18,12 +19,15 @@ export default function InfrastructureFeed() {
     setArticleLinks(
       Array.from(data[0].values(), (item) => item.metadata.source)
     );
-    setArticleCategoriesRaw(
-      Array.from(data[0].values(), (item) => item.metadata.rawcategories)
+    setArticleEntities(
+      Array.from(data[0].values(), (item) => item.metadata.entitiesraw)
     );
-    setArticleCategoriesSumm(
-      Array.from(data[0].values(), (item) => item.metadata.summcategories)
+    setArticleEntitiesSummary(
+      Array.from(data[0].values(), (item) => item.metadata.entitiessummary)
     );
+    setRelevancy(
+      Array.from(data[0].values(), (item) => item.metadata.relevant)
+    )
     setSummary(data[1]);
   }
 
@@ -57,8 +61,9 @@ export default function InfrastructureFeed() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Categories (from raw text)</th>
-            <th>Categories (from summary text)</th>
+            <th>Entity Extraction (raw text)</th>
+            <th>Entity Extraction (summarised text)</th>
+            <th>Relevant?</th>
           </tr>
         </thead>
         <tbody>
@@ -69,8 +74,9 @@ export default function InfrastructureFeed() {
                 <a href={articleLinks[index]}>{articleLinks[index]}</a>
               </td>
               <td>{element}</td>
-              <td>{articleCategoriesRaw[index]}</td>
-              <td>{articleCategoriesSumm[index]}</td>
+              <td>{articleEntities[index]}</td>
+              <td>{articleEntitiesSummary[index]}</td>
+              <td>{relevancy[index]}</td>
             </tr>
           ))}
         </tbody>

@@ -2,8 +2,8 @@ import { useState } from "react";
 
 export default function Main() {
   const [articleContainer, setArticleContainer] = useState("");
-  const [articleCategoriesRaw, setArticleCategoriesRaw] = useState("");
-  const [articleCategoriesSumm, setArticleCategoriesSumm] = useState("");
+  const [articleEntities, setArticleEntities] = useState("");
+  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [articleLink, setArticleLink] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -19,17 +19,19 @@ export default function Main() {
         "Content-type": "application/json",
       },
     };
-    fetch("http://localhost:8000/indivarticle", options).then(async (reponse) => {
-      const data = await reponse.json();
-      setArticleContainer(data.pageContent);
-      setArticleTitle(data.metadata.title);
-      setArticleLink(prompt);
-      setArticleCategoriesRaw(data.metadata.rawcategories);
-      setArticleCategoriesSumm(data.metadata.summcategories);
-      console.log(data);
-    });
+    fetch("http://localhost:8000/indivarticle", options).then(
+      async (reponse) => {
+        const data = await reponse.json();
+        setArticleContainer(data.pageContent);
+        setArticleTitle(data.metadata.title);
+        setArticleLink(prompt);
+        setArticleEntities(data.metadata.entitiesraw);
+        setArticleEntitiesSummary(data.metadata.entitiessummary);
+        console.log(data);
+      }
+    );
   }
-  
+
   return (
     <div className="main">
       <h1>Individual Article Extraction</h1>
@@ -39,8 +41,8 @@ export default function Main() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Categories (from raw text)</th>
-            <th>Categories (from summary text)</th>
+            <th>Entity Extraction (raw text)</th>
+            <th>Entity Extraction (summarised text)</th>
           </tr>
         </thead>
         <tbody>
@@ -50,8 +52,8 @@ export default function Main() {
               <a href={articleLink}>{articleLink}</a>
             </td>
             <td>{articleContainer}</td>
-            <td>{articleCategoriesRaw}</td>
-            <td>{articleCategoriesSumm}</td>
+            <td>{articleEntities}</td>
+            <td>{articleEntitiesSummary}</td>
           </tr>
         </tbody>
       </table>
