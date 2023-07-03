@@ -28,13 +28,6 @@ const summaryPrompt = PromptTemplate.fromTemplate(
 
   Text: {input}`
 );
-const inferringPrompt = PromptTemplate.fromTemplate(
-  `Given a piece of text, infer 5 relevant entities from it. Entities refer to 
-  persons/organisations/names. Give only the entities in your response using the format:
-  "Entity_1, Entity_2, Entity_3".
-
-  Text: {input}`
-);
 const CNtoENText = PromptTemplate.fromTemplate(
   `You will be given a piece of Chinese text. Perform the following steps:
   1. Translate the text to English.
@@ -43,20 +36,40 @@ const CNtoENText = PromptTemplate.fromTemplate(
 
   Text: {input}`
 );
-const relevancyPrompt = PromptTemplate.fromTemplate(
-  `Given a piece of text, determine if it is relevant to the given category.
-  Reply with "yes" if it is relevant, or "no" otherwise.
+const dataCleaningPrompt = PromptTemplate.fromTemplate(
+  `Given a piece of text and a title, remove all text that is irrelevant to the title, and return
+  the cleaned text body as your response.
   
+  Text: {input}, Title: {title}`
+);
+const inferringPrompt = PromptTemplate.fromTemplate(
+  `Given a text body, perform the following steps on it:
+
+  1. Infer 5 relevant entities from it. Entities refer to 
+  persons/organisations/names. Give only the entities in your response using the format:
+  "Entity_1, Entity_2, Entity_3".
+
+  2. Determine if the text is relevant to the given category. Reply with "Yes" if it is
+  relevant, "No" otherwise.
+  
+  Respond with a JSON object in the following format:
+  "entities": "insert response from step 1",
+  "relevant": "insert response from step 2"
+
   Text: {input}, Category: {category}`
 );
+
 const summaryChain = new LLMChain({
   llm: model,
   prompt: summaryPrompt,
   memory,
 });
-const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
 const CNtoENTextChain = new LLMChain({ llm: model, prompt: CNtoENText });
-const relevancyChain = new LLMChain({ llm: model, prompt: relevancyPrompt });
+const dataCleaningChain = new LLMChain({
+  llm: model,
+  prompt: dataCleaningPrompt,
+});
+const inferringChain = new LLMChain({ llm:model, prompt: inferringPrompt });
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
   chunkOverlap: 100,
@@ -141,18 +154,22 @@ function readFromCSV() {
   return docContainer;
 }
 
+//Split article body into chunks
 async function splitText(docContainer) {
   for (i = 0; i < docContainer.length; i++) {
     const docs = await splitter.splitDocuments([docContainer[i]]);
-    console.log(docs)
+    const title = docContainer[i].metadata.title;
     for (j = 0; j < docs.length; j++) {
       const snippet = docs[j].pageContent;
-      console.log(snippet)
       await summaryChain.call({ input: snippet });
     }
     const data = await memory.loadMemoryVariables();
     const summary = JSON.stringify(data.chat_history).replace(/"/g, "");
-    docContainer[i].pageContent = summary;
+    const cleanedSummary = await dataCleaningChain.call({
+      input: summary,
+      title: title,
+    });
+    docContainer[i].pageContent = cleanedSummary.text.replace(/\n/g, "");
     memory.clear();
   }
 }
@@ -174,13 +191,13 @@ async function callOpenAI(docContainer, endpoint) {
       articleContent[i] = translatedText.text;
       docContainer[i].metadata.translatedtitle = translatedTitle.text;
     }
-    const entities = await inferringChain.call({ input: articleContent[i] });
-    const relevancy = await relevancyChain.call({
+    const data = await inferringChain.call({
       input: articleContent[i],
       category: "Infrastructure",
     });
-    docContainer[i].metadata.entities = entities.text.replace(/\n/g, "");
-    docContainer[i].metadata.relevant = relevancy.text.replace(/\n/g, "");
+    const object = JSON.parse(data.text.replace(/\n/g, ""));
+    docContainer[i].metadata.entities = object.entities;
+    docContainer[i].metadata.relevant = object.relevant;
   }
 }
 
@@ -224,7 +241,6 @@ async function handleIndivArticle(url, endpoint) {
     );
   }
   await getArticleContent(docContainer);
-  console.log(docContainer[0].pageContent);
   await splitText(docContainer);
   await callOpenAI(docContainer, endpoint);
   return docContainer[0];
