@@ -3,7 +3,6 @@ import { useState } from "react";
 export default function TranslationFeed() {
   const [articleContainer, setArticleContainer] = useState("");
   const [articleEntities, setArticleEntities] = useState("");
-  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [originalArticleTitle, setOriginalArticleTitle] = useState("");
   const [articleLink, setArticleLink] = useState("");
@@ -27,9 +26,7 @@ export default function TranslationFeed() {
         setArticleTitle(data.metadata.title);
         setOriginalArticleTitle(data.metadata.translatedtitle);
         setArticleLink(prompt);
-        setArticleEntities(data.metadata.entitiesraw);
-        setArticleEntitiesSummary(data.metadata.entitiessummary);
-        console.log(data);
+        setArticleEntities(data.metadata.entities);
       }
     );
   }
@@ -43,8 +40,7 @@ export default function TranslationFeed() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Entity Extraction (raw text)</th>
-            <th>Entity Extraction (summarised text)</th>
+            <th>Entity Extraction</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +56,6 @@ export default function TranslationFeed() {
             </td>
             <td>{articleContainer}</td>
             <td>{articleEntities}</td>
-            <td>{articleEntitiesSummary}</td>
           </tr>
         </tbody>
       </table>

@@ -3,7 +3,6 @@ import { useState } from "react";
 export default function Main() {
   const [articleContainer, setArticleContainer] = useState("");
   const [articleEntities, setArticleEntities] = useState("");
-  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState("");
   const [articleTitle, setArticleTitle] = useState("");
   const [articleLink, setArticleLink] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -25,9 +24,7 @@ export default function Main() {
         setArticleContainer(data.pageContent);
         setArticleTitle(data.metadata.title);
         setArticleLink(prompt);
-        setArticleEntities(data.metadata.entitiesraw);
-        setArticleEntitiesSummary(data.metadata.entitiessummary);
-        console.log(data);
+        setArticleEntities(data.metadata.entities);
       }
     );
   }
@@ -41,8 +38,7 @@ export default function Main() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Entity Extraction (raw text)</th>
-            <th>Entity Extraction (summarised text)</th>
+            <th>Entity Extraction</th>
           </tr>
         </thead>
         <tbody>
@@ -53,7 +49,6 @@ export default function Main() {
             </td>
             <td>{articleContainer}</td>
             <td>{articleEntities}</td>
-            <td>{articleEntitiesSummary}</td>
           </tr>
         </tbody>
       </table>

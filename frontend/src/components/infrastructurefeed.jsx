@@ -3,32 +3,26 @@ import { useState, useEffect } from "react";
 export default function InfrastructureFeed() {
   const [articleContainer, setArticleContainer] = useState([]);
   const [articleEntities, setArticleEntities] = useState([]);
-  const [articleEntitiesSummary, setArticleEntitiesSummary] = useState([]);
   const [articleTitles, setArticleTitles] = useState([]);
   const [articleLinks, setArticleLinks] = useState([]);
   const [relevancy, setRelevancy] = useState([]);
-  const [summary, setSummary] = useState("");
 
   function setStates(data) {
     setArticleContainer(
-      Array.from(data[0].values(), (item) => item.pageContent)
+      Array.from(data.values(), (item) => item.pageContent)
     );
     setArticleTitles(
-      Array.from(data[0].values(), (item) => item.metadata.title)
+      Array.from(data.values(), (item) => item.metadata.title)
     );
     setArticleLinks(
-      Array.from(data[0].values(), (item) => item.metadata.source)
+      Array.from(data.values(), (item) => item.metadata.source)
     );
     setArticleEntities(
-      Array.from(data[0].values(), (item) => item.metadata.entitiesraw)
-    );
-    setArticleEntitiesSummary(
-      Array.from(data[0].values(), (item) => item.metadata.entitiessummary)
+      Array.from(data.values(), (item) => item.metadata.entities)
     );
     setRelevancy(
-      Array.from(data[0].values(), (item) => item.metadata.relevant)
+      Array.from(data.values(), (item) => item.metadata.relevant)
     )
-    setSummary(data[1]);
   }
 
   function fetchArticles() {
@@ -61,8 +55,7 @@ export default function InfrastructureFeed() {
             <th>Article Title</th>
             <th>URL</th>
             <th>Description</th>
-            <th>Entity Extraction (raw text)</th>
-            <th>Entity Extraction (summarised text)</th>
+            <th>Entity Extraction</th>
             <th>Relevant?</th>
           </tr>
         </thead>
@@ -75,15 +68,12 @@ export default function InfrastructureFeed() {
               </td>
               <td>{element}</td>
               <td>{articleEntities[index]}</td>
-              <td>{articleEntitiesSummary[index]}</td>
               <td>{relevancy[index]}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="summary-container">
-        <p>Summary: {summary}</p>
-      </div>
+      <div></div>
     </div>
   );
 }
