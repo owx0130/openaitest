@@ -11,7 +11,8 @@ app.use(cors());
 
 //Declare global variables
 const URLcontainer = [
-  "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
+  "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure", 
+  "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
 ];
 const rssEndpoints = ["/infrastructure", "/infrastructureslow"];
 

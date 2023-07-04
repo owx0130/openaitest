@@ -24,19 +24,26 @@ const memory = new ConversationSummaryMemory({
 });
 const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarise the given text, using as few words as possible to do so.
+  `Summarise the given text, using as few words as possible to do so. Give the summary as your
+  response.
+
+  Text: {input}`
+);
+const translationPrompt = PromptTemplate.fromTemplate(
+  `Translate the given text to English. Afterwards, summarise the English text using
+  as few words as possible, providing your summary as the response.
 
   Text: {input}`
 );
 const dataCleaningPrompt = PromptTemplate.fromTemplate(
-  `You will be given an extract of an article body taken directly from the webpage. However,
-  there is useless information that was extracted into this article body, in the form of
-  advertisements or information from other articles. These useless information usually appear
-  at the top/bottom of the article. Your job is to clean this article body by removing 
-  the irrelevant information from it. Any information that is not relevant to the given
-  article title can be removed. Make sure that there are no abrupt endings to sentences, 
-  correcting them if any. Use as few words as possible when making your corrections. 
-  Do not add/remove any other data. Once done, provide the cleaned text body as your response.
+  `You will be given an extract of an article body taken directly from the webpage. Your job is to 
+  clean this article body by removing the irrelevant information from it. Any information that is not 
+  relevant to the given article title can be removed. Additionally, remove any instance of the
+  "human" or "AI" mentioning something, and restructure the affected text from a third party point of
+  view. Ensure that there are no abrubtly ended sentences, and add in appropriate words to end sentences
+  properly.
+  
+  Reply only with the cleaned text body.
 
   Text: {input}, Title: {title}`
 );
@@ -54,12 +61,19 @@ const inferringPrompt = PromptTemplate.fromTemplate(
   "entities": "insert response from step 1",
   "relevant": "insert response from step 2"
 
+  Reply only with the stringified JSON object such that it can be parsed immediately.
+
   Text: {input}, Category: {category}`
 );
 
 const summaryChain = new LLMChain({
   llm: model,
   prompt: summaryPrompt,
+  memory,
+});
+const translationChain = new LLMChain({
+  llm: model,
+  prompt: translationPrompt,
   memory,
 });
 const dataCleaningChain = new LLMChain({
@@ -69,7 +83,7 @@ const dataCleaningChain = new LLMChain({
 const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
-  chunkOverlap: 100,
+  chunkOverlap: 200,
 });
 
 //Get individual article URLS from RSS Feed link
@@ -158,18 +172,18 @@ async function splitText(docContainer) {
     const title = docContainer[i].metadata.title;
     for (j = 0; j < docs.length; j++) {
       const snippet = docs[j].pageContent;
-      console.log(snippet);
+      console.log(snippet)
       await summaryChain.call({ input: snippet });
     }
     const data = await memory.loadMemoryVariables();
-    const summary = JSON.stringify(data.chat_history).replace(/"/g, "");
-    console.log(summary);
+    const summary = JSON.stringify(data.chat_history);
+    console.log(summary)
     const cleanSummary = await dataCleaningChain.call({
       input: summary,
       title: title,
     });
+    console.log(cleanSummary)
     docContainer[i].pageContent = cleanSummary.text.replace(/\n/g, "");
-    console.log(docContainer[i].pageContent);
     memory.clear();
   }
 }
@@ -186,7 +200,6 @@ async function callOpenAI(docContainer) {
       category: "Infrastructure",
     });
     const object = JSON.parse(data.text.replace(/\n/g, ""));
-    console.log(object);
     docContainer[i].metadata.entities = object.entities;
     docContainer[i].metadata.relevant = object.relevant;
   }
