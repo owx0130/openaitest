@@ -45,10 +45,12 @@ export default function InfrastructureFeed() {
 
   return (
     <div className="main">
+      <div className="top-section-container">
       <h1>Infrastructure Feed</h1>
-      <button className="main-button" onClick={handleClick}>
+      <button className="refresh-button" onClick={handleClick}>
         Click here to refresh articles
       </button>
+      </div>
       <table>
         <thead>
           <tr>

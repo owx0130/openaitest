@@ -17,7 +17,7 @@ body {
   background-color:black;
   margin: 0;
   height: auto;
-  width: 550px;
+  width: 450px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -53,13 +53,6 @@ input {
   box-shadow: 5px 5px 5px rgba(0,0,0,0.2);
 }
 
-ul {
-  width: auto;
-  max-width: 75%;
-  margin: 0px;
-  padding: 0px;
-}
-
 p {
   text-align: center;
   color: whitesmoke;
@@ -73,9 +66,10 @@ p {
 }
 
 .sidebar-button {
-  margin: 5px;
   padding: 10px;
-  width: 50%;
+  width: 100%;
+  margin-top: 5px;
+  margin-bottom: 5px;
   background-color: transparent;
   color: whitesmoke;
   border: solid 0.5px whitesmoke;
@@ -84,19 +78,24 @@ p {
 }
 
 a {
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  width: 50%;
   text-decoration: none;
 }
 
 table, th, td, tr {
-  max-width: 85%;
+  max-width: 95%;
   border: solid 1px black;
   border-collapse: collapse;
 }
 
-.main-button {
+.top-section-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.refresh-button {
   margin-bottom: 21.44px;
   padding: 10px;
   width: 50%;
@@ -105,11 +104,4 @@ table, th, td, tr {
   border: none;
   border-radius: 30px;
   cursor: pointer;
-}
-
-.summary-container {
-  margin-top: 50px;
-  margin-bottom: 50px;
-  max-width: 85%;
-  word-wrap: break-word;
 }

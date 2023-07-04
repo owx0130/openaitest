@@ -14,7 +14,6 @@ const URLcontainer = [
   "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
 ];
 const rssEndpoints = ["/infrastructure", "/infrastructureslow"];
-const indivEndpoints = ["/indivarticle", "/translation"];
 
 //GET request for article feed
 app.get(rssEndpoints, async (req, res) => {
@@ -28,8 +27,8 @@ app.get(rssEndpoints, async (req, res) => {
 });
 
 //POST request for individual articles
-app.post(indivEndpoints, async (req, res) => {
-  const docOutput = await handleIndivArticle(req.body.content, req.path);
+app.post("/indivarticle", async (req, res) => {
+  const docOutput = await handleIndivArticle(req.body.content);
   res.send(docOutput);
 });
 

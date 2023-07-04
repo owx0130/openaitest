@@ -28,18 +28,16 @@ const summaryPrompt = PromptTemplate.fromTemplate(
 
   Text: {input}`
 );
-const CNtoENText = PromptTemplate.fromTemplate(
-  `You will be given a piece of Chinese text. Perform the following steps:
-  1. Translate the text to English.
-  2. On the translated text, correct all sentence structure and grammatical errors appropriately.
-  3. Provide the final text body as your response.
-
-  Text: {input}`
-);
 const dataCleaningPrompt = PromptTemplate.fromTemplate(
-  `Given a piece of text and a title, remove all text that is irrelevant to the title, and return
-  the cleaned text body as your response.
-  
+  `You will be given an extract of an article body taken directly from the webpage. However,
+  there is useless information that was extracted into this article body, in the form of
+  advertisements or information from other articles. These useless information usually appear
+  at the top/bottom of the article. Your job is to clean this article body by removing 
+  the irrelevant information from it. Any information that is not relevant to the given
+  article title can be removed. Make sure that there are no abrupt endings to sentences, 
+  correcting them if any. Use as few words as possible when making your corrections. 
+  Do not add/remove any other data. Once done, provide the cleaned text body as your response.
+
   Text: {input}, Title: {title}`
 );
 const inferringPrompt = PromptTemplate.fromTemplate(
@@ -52,7 +50,7 @@ const inferringPrompt = PromptTemplate.fromTemplate(
   2. Determine if the text is relevant to the given category. Reply with "Yes" if it is
   relevant, "No" otherwise.
   
-  Respond with a JSON object in the following format:
+  Structure your reply as a JSON object with the properties below:
   "entities": "insert response from step 1",
   "relevant": "insert response from step 2"
 
@@ -64,12 +62,11 @@ const summaryChain = new LLMChain({
   prompt: summaryPrompt,
   memory,
 });
-const CNtoENTextChain = new LLMChain({ llm: model, prompt: CNtoENText });
 const dataCleaningChain = new LLMChain({
   llm: model,
   prompt: dataCleaningPrompt,
 });
-const inferringChain = new LLMChain({ llm:model, prompt: inferringPrompt });
+const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
 const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
   chunkOverlap: 100,
@@ -81,7 +78,7 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= 2; i++) {
+  for (let i = 1; i <= 1; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
@@ -161,41 +158,35 @@ async function splitText(docContainer) {
     const title = docContainer[i].metadata.title;
     for (j = 0; j < docs.length; j++) {
       const snippet = docs[j].pageContent;
+      console.log(snippet);
       await summaryChain.call({ input: snippet });
     }
     const data = await memory.loadMemoryVariables();
     const summary = JSON.stringify(data.chat_history).replace(/"/g, "");
-    const cleanedSummary = await dataCleaningChain.call({
+    console.log(summary);
+    const cleanSummary = await dataCleaningChain.call({
       input: summary,
       title: title,
     });
-    docContainer[i].pageContent = cleanedSummary.text.replace(/\n/g, "");
+    docContainer[i].pageContent = cleanSummary.text.replace(/\n/g, "");
+    console.log(docContainer[i].pageContent);
     memory.clear();
   }
 }
 
 //Pass article content into OpenAI API to perform various actions
-async function callOpenAI(docContainer, endpoint) {
+async function callOpenAI(docContainer) {
   const articleContent = Array.from(
     docContainer.values(),
     (item) => item.pageContent
   );
   for (i = 0; i < articleContent.length; i++) {
-    if (endpoint == "/translation") {
-      const translatedTitle = await CNtoENTextChain.call({
-        input: docContainer[i].metadata.title,
-      });
-      const translatedText = await CNtoENTextChain.call({
-        input: articleContent[i],
-      });
-      articleContent[i] = translatedText.text;
-      docContainer[i].metadata.translatedtitle = translatedTitle.text;
-    }
     const data = await inferringChain.call({
       input: articleContent[i],
       category: "Infrastructure",
     });
     const object = JSON.parse(data.text.replace(/\n/g, ""));
+    console.log(object);
     docContainer[i].metadata.entities = object.entities;
     docContainer[i].metadata.relevant = object.relevant;
   }
@@ -214,35 +205,20 @@ async function extractDocuments(url) {
 }
 
 //Driver function to handle individual articles
-async function handleIndivArticle(url, endpoint) {
-  const docContainer = [];
-  if (endpoint == "/translation") {
-    docContainer.push(
-      new Document({
-        pageContent: "",
-        metadata: {
-          source: url,
-          title: "",
-          translatedtitle: "",
-          entities: "",
-        },
-      })
-    );
-  } else {
-    docContainer.push(
-      new Document({
-        pageContent: "",
-        metadata: {
-          source: url,
-          title: "",
-          entities: "",
-        },
-      })
-    );
-  }
+async function handleIndivArticle(url) {
+  const docContainer = [
+    new Document({
+      pageContent: "",
+      metadata: {
+        source: url,
+        title: "",
+        entities: "",
+      },
+    }),
+  ];
   await getArticleContent(docContainer);
   await splitText(docContainer);
-  await callOpenAI(docContainer, endpoint);
+  await callOpenAI(docContainer);
   return docContainer[0];
 }
 
