@@ -29,20 +29,13 @@ const summaryPrompt = PromptTemplate.fromTemplate(
 
   Text: {input}`
 );
-const translationPrompt = PromptTemplate.fromTemplate(
-  `Translate the given text to English. Afterwards, summarise the English text using
-  as few words as possible, providing your summary as the response.
-
-  Text: {input}`
-);
 const dataCleaningPrompt = PromptTemplate.fromTemplate(
   `You will be given an extract of an article body taken directly from the webpage. Your job is to 
   clean this article body by removing the irrelevant information from it. Any information that is not 
   relevant to the given article title can be removed. Additionally, remove any instance of the
   "human" or "AI" mentioning something, and restructure the affected text from a third party point of
-  view. Ensure that there are no abrubtly ended sentences, and add in appropriate words to end sentences
-  properly.
-  
+  view.
+
   Reply only with the cleaned text body.
 
   Text: {input}, Title: {title}`
@@ -71,11 +64,6 @@ const summaryChain = new LLMChain({
   prompt: summaryPrompt,
   memory,
 });
-const translationChain = new LLMChain({
-  llm: model,
-  prompt: translationPrompt,
-  memory,
-});
 const dataCleaningChain = new LLMChain({
   llm: model,
   prompt: dataCleaningPrompt,
@@ -92,7 +80,7 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 1; i <= 1; i++) {
+  for (let i = 0; i <= 1; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
