@@ -32,9 +32,9 @@ const summaryPrompt = PromptTemplate.fromTemplate(
 const dataCleaningPrompt = PromptTemplate.fromTemplate(
   `You will be given an extract of an article body taken directly from the webpage. Your job is to 
   clean this article body by removing the irrelevant information from it. Any information that is not 
-  relevant to the given article title can be removed. Additionally, remove any instance of the
-  "human" or "AI" mentioning something, and restructure the affected text from a third party point of
-  view.
+  relevant to the given article title can be removed. Additionally, remove any instance of the "human"
+  or "AI" speaking, and restructure the affected parts to have a third party objective point of view.
+  Do not use words like "the conversation shifts" in your cleaned text.
 
   Reply only with the cleaned text body.
 
