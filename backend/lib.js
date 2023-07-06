@@ -22,7 +22,11 @@ const memory = new ConversationSummaryMemory({
     openAIApiKey: API_KEY,
   }),
 });
-const model = new OpenAI({ temperature: 0, openAIApiKey: API_KEY });
+const model = new OpenAI({
+  temperature: 0,
+  openAIApiKey: API_KEY,
+  modelName: "gpt-3.5-turbo",
+});
 const summaryPrompt = PromptTemplate.fromTemplate(
   `Summarise the given text, using as few words as possible to do so. Give the summary as your
   response.
@@ -160,17 +164,17 @@ async function splitText(docContainer) {
     const title = docContainer[i].metadata.title;
     for (j = 0; j < docs.length; j++) {
       const snippet = docs[j].pageContent;
-      console.log(snippet)
+      console.log(snippet);
       await summaryChain.call({ input: snippet });
     }
     const data = await memory.loadMemoryVariables();
     const summary = JSON.stringify(data.chat_history);
-    console.log(summary)
+    console.log(summary);
     const cleanSummary = await dataCleaningChain.call({
       input: summary,
       title: title,
     });
-    console.log(cleanSummary)
+    console.log(cleanSummary);
     docContainer[i].pageContent = cleanSummary.text.replace(/\n/g, "");
     memory.clear();
   }
