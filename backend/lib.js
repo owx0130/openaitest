@@ -19,6 +19,7 @@ const memory = new ConversationSummaryMemory({
   llm: new OpenAI({
     modelName: "gpt-3.5-turbo",
     temperature: 0,
+    maxTokens: -1,
     openAIApiKey: API_KEY,
   }),
 });
@@ -26,10 +27,10 @@ const model = new OpenAI({
   temperature: 0,
   openAIApiKey: API_KEY,
   modelName: "gpt-3.5-turbo",
+  maxTokens: -1,
 });
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarise the given text, using as few words as possible to do so. Give the summary as your
-  response.
+  `Summarise the given text, using at most 30 words to do so.
 
   Text: {input}`
 );
@@ -38,7 +39,6 @@ const dataCleaningPrompt = PromptTemplate.fromTemplate(
   clean this article body by removing the irrelevant information from it. Any information that is not 
   relevant to the given article title can be removed. Additionally, remove any instance of the "human"
   or "AI" speaking, and restructure the affected parts to have a third party objective point of view.
-  Do not use words like "the conversation shifts" in your cleaned text.
 
   Reply only with the cleaned text body.
 
@@ -47,9 +47,8 @@ const dataCleaningPrompt = PromptTemplate.fromTemplate(
 const inferringPrompt = PromptTemplate.fromTemplate(
   `Given a text body, perform the following steps on it:
 
-  1. Infer 5 relevant entities from it. Entities refer to 
-  persons/organisations/names. Give only the entities in your response using the format:
-  "Entity_1, Entity_2, Entity_3".
+  1. Infer a maximum of 5 relevant entities from it. Entities refer to key persons/organisations
+  that are involved in the article. List all the entities separated by a comma on the same line.
 
   2. Determine if the text is relevant to the given category. Reply with "Yes" if it is
   relevant, "No" otherwise.
