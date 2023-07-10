@@ -22,9 +22,20 @@ const model = new OpenAI(model_options);
 
 //Set up Prompt Templates
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarise the given text, using at most 20 words to do so.
+  `Summarise the given text, using as few words as possible.
+
+  Provide only the summary as your reply.
 
   Text: {input}`
+);
+const overallSummaryPrompt = PromptTemplate.fromTemplate(
+  `You will be provided with an array containing summarised content from various articles. Parse through
+  the array and retrieve the content from every index, concatenating them into a single paragraph.
+  Afterwards, summarise the paragraph using as few words as possible.
+
+  Provide only the summary as your reply.
+
+  Array of content: {input}`
 );
 const dataCleaningPrompt = PromptTemplate.fromTemplate(
   `You will be given an extract of an article body taken directly from the webpage. Your job is to 
@@ -61,6 +72,10 @@ const summaryChain = new LLMChain({
   prompt: summaryPrompt,
   memory,
 });
+const overallSummaryChain = new LLMChain({
+  llm: model,
+  prompt: overallSummaryPrompt,
+});
 const dataCleaningChain = new LLMChain({
   llm: model,
   prompt: dataCleaningPrompt,
@@ -74,7 +89,8 @@ const splitter = new RecursiveCharacterTextSplitter({
 module.exports = {
   memory,
   summaryChain,
+  overallSummaryChain,
   dataCleaningChain,
   inferringChain,
   splitter,
-}
+};

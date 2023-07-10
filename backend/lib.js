@@ -6,6 +6,7 @@ const { JSDOM } = require("jsdom");
 const {
   memory,
   summaryChain,
+  overallSummaryChain,
   dataCleaningChain,
   inferringChain,
   splitter,
@@ -17,7 +18,7 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= 0; i++) {
+  for (let i = 0; i <= 1; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
@@ -39,18 +40,18 @@ async function getArticleContent(docContainer) {
     const dom = new JSDOM(response.data);
     const document = dom.window.document;
     const articleContent = document.querySelectorAll("p");
+    const raw_title = document.querySelector("title").textContent;
     articleContent.forEach((para) => {
       fullArticle += para.textContent;
     });
     docContainer[i].pageContent = fullArticle.replace(/\n/g, "");
-    docContainer[i].metadata.title =
-      document.querySelector("title").textContent;
+    docContainer[i].metadata.title = raw_title.replace(/\n/g, "");
   }
 }
 
 //Update CSV database. This replaces all existing content in the current CSV file
-function writeToCSV(docContainer, directory) {
-  const rows = Array.from(docContainer.values(), (item) => [
+function writeToCSV(docContainer, directory, summary) {
+  const rows = docContainer.map((item) => [
     item.metadata.title,
     item.metadata.source,
     item.metadata.entities,
@@ -61,6 +62,7 @@ function writeToCSV(docContainer, directory) {
   rows.forEach((row) => {
     csvContent += row.join(";;") + "\n";
   });
+  csvContent += summary;
   fs.writeFileSync(directory, csvContent, "utf8");
   console.log("CSV file has been written successfully.");
 }
@@ -87,7 +89,8 @@ function readFromCSV(directory) {
     });
     docContainer.push(doc);
   });
-  return docContainer;
+  const summary = lines[lines.length - 1];
+  return [docContainer, summary];
 }
 
 //Split article body into chunks
@@ -113,15 +116,11 @@ async function splitText(docContainer) {
   }
 }
 
-//Pass article content into ChatGPT API to perform various actions
-async function callChatGPT(docContainer, category) {
-  const articleContent = Array.from(
-    docContainer.values(),
-    (item) => item.pageContent
-  );
-  for (i = 0; i < articleContent.length; i++) {
+//Infer entities and relevancy from summarised text
+async function inferFromText(docContainer, category) {
+  for (i = 0; i < docContainer.length; i++) {
     const data = await inferringChain.call({
-      input: articleContent[i],
+      input: docContainer[i].pageContent,
       category: category,
     });
     const object = JSON.parse(data.text.replace(/\n/g, ""));
@@ -130,16 +129,28 @@ async function callChatGPT(docContainer, category) {
   }
 }
 
+//Provide an overall summary of all articles in the feed
+async function summariseAllArticles(docContainer) {
+  const contents = docContainer.map((item) => item.pageContent);
+  const data = await overallSummaryChain.call({ input: contents });
+  return data.text.replace(/\n/g, "");
+}
+
 //Driver function to extract and save RSS Feed articles to CSV
-async function extractDocuments(url, raw_directory, summary_directory, category) {
+async function extractDocuments(
+  url,
+  raw_directory,
+  summary_directory,
+  category
+) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
-  writeToCSV(docContainer, raw_directory);
+  writeToCSV(docContainer, raw_directory, "");
   await splitText(docContainer);
-  await callChatGPT(docContainer, category);
-  writeToCSV(docContainer, summary_directory);
-  return docContainer;
+  await inferFromText(docContainer, category);
+  const summary = await summariseAllArticles(docContainer);
+  writeToCSV(docContainer, summary_directory, summary);
 }
 
 //Driver function to handle individual articles
@@ -156,7 +167,7 @@ async function handleIndivArticle(url) {
   ];
   await getArticleContent(docContainer);
   await splitText(docContainer);
-  await callChatGPT(docContainer);
+  await inferFromText(docContainer);
   return docContainer[0];
 }
 

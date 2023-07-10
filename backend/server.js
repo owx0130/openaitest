@@ -28,12 +28,13 @@ app.get(Object.keys(endpoints), async (req, res) => {
     const category = req.path.slice(1, -7);
     const raw_directory = "db" + req.path.slice(0, -7) + "raw.csv";
     const summary_directory = "db" + req.path.slice(0, -7) + ".csv";
-    const reply = await extractDocuments(
+    await extractDocuments(
       endpoints[req.path],
       raw_directory,
       summary_directory,
       category
     );
+    const reply = readFromCSV(summary_directory);
     res.send(reply);
   } else {
     const summary_directory = "db" + req.path + ".csv";

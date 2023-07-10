@@ -7,14 +7,17 @@ export default function InfrastructureFeed() {
   const [entities, setEntities] = useState([]);
   const [titles, setTitles] = useState([]);
   const [links, setLinks] = useState([]);
-  const [relevancy, setRelevancy] = useState([]);
+  const [relevance, setRelevance] = useState([]);
+  const [summary, setSummary] = useState("");
 
   function setStates(data) {
-    setContents(Array.from(data.values(), (item) => item.pageContent));
-    setTitles(Array.from(data.values(), (item) => item.metadata.title));
-    setLinks(Array.from(data.values(), (item) => item.metadata.source));
-    setEntities(Array.from(data.values(), (item) => item.metadata.entities));
-    setRelevancy(Array.from(data.values(), (item) => item.metadata.relevant));
+    setContents(data[0].map((item) => item.pageContent));
+    setTitles(data[0].map((item) => item.metadata.title));
+    setLinks(data[0].map((item) => item.metadata.source));
+    setEntities(data[0].map((item) => item.metadata.entities));
+    setRelevance(data[0].map((item) => item.metadata.relevant));
+    setSummary(data[1]);
+    console.log(summary);
   }
 
   function fetchArticles() {
@@ -58,9 +61,15 @@ export default function InfrastructureFeed() {
               </td>
               <td>{element}</td>
               <td>{entities[index]}</td>
-              <td>{relevancy[index]}</td>
+              <td>{relevance[index]}</td>
             </tr>
           ))}
+          <tr>
+            <th colSpan={4}>Overall Summary</th>
+          </tr>
+          <tr>
+            <td colSpan={4}>{summary}</td>
+          </tr>
         </tbody>
       </table>
       <div></div>
