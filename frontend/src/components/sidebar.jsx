@@ -12,10 +12,16 @@ export default function Sidebar() {
         </Link>
         <p>RSS Feed Categories</p>
         <Link to="/infrastructure">
-          <button className="sidebar-button">Infrastructure (fast)</button>
+          <button className="sidebar-button">Infrastructure</button>
         </Link>
         <Link to="/infrastructureslow">
           <button className="sidebar-button">Infrastructure (slow)</button>
+        </Link>
+        <Link to="/china">
+          <button className="sidebar-button">China</button>
+        </Link>
+        <Link to="/ai">
+          <button className="sidebar-button">AI</button>
         </Link>
       </div>
       <p style={{ color: "whitesmoke" }}>ChatGPT Clone using OpenAI API</p>

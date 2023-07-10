@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 
-export default function InfrastructureSlowFeed() {
-  const REFRESH_URL = "http://localhost:8000/infrastructurerefresh";
+export default function AIFeed() {
+  const REFRESH_URL = "http://localhost:8000/airefresh";
+  const CSV_URL = "http://localhost:8000/ai";
   const [contents, setContents] = useState([]);
   const [entities, setEntities] = useState([]);
   const [titles, setTitles] = useState([]);
@@ -17,6 +18,13 @@ export default function InfrastructureSlowFeed() {
   }
 
   function fetchArticles() {
+    fetch(CSV_URL).then(async (response) => {
+      const data = await response.json();
+      setStates(data);
+    });
+  }
+
+  function handleClick() {
     fetch(REFRESH_URL).then(async (response) => {
       const data = await response.json();
       setStates(data);
@@ -27,7 +35,12 @@ export default function InfrastructureSlowFeed() {
 
   return (
     <div className="main">
-      <h1>Infrastructure Feed</h1>
+      <div className="top-section-container">
+        <h1>AI Feed</h1>
+        <button className="refresh-button" onClick={handleClick}>
+          Click here to refresh articles
+        </button>
+      </div>
       <table>
         <thead>
           <tr>
@@ -39,7 +52,7 @@ export default function InfrastructureSlowFeed() {
         </thead>
         <tbody>
           {contents.map((element, index) => (
-            <tr>
+            <tr key={index}>
               <td>
                 <a href={links[index]}>{titles[index]}</a>
               </td>

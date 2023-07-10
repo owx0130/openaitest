@@ -9,20 +9,26 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-//Declare global variables
-const URLcontainer = [
-  "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure", 
-  "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
-];
-const rssEndpoints = ["/infrastructure", "/infrastructureslow"];
+//Declare endpoints object
+const endpoints = {
+  "/infrastructurerefresh": "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
+  "/chinarefresh": "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
+  "/airefresh": "https://www.inoreader.com/stream/user/1005506540/tag/AI%20-%20General/view/html",
+  "/infrastructure": null,
+  "/china": null,
+  "/ai": null,
+};
 
-//GET request for article feed
-app.get(rssEndpoints, async (req, res) => {
-  if (req.path == "/infrastructure") {
-    const reply = readFromCSV();
+//GET request for RSS article feed
+app.get(Object.keys(endpoints), async (req, res) => {
+  if (req.path.includes("refresh")) {
+    const raw_directory = "db" + req.path.slice(0, -7) + "raw.csv";
+    const summary_directory = "db" + req.path.slice(0, -7) + ".csv";
+    const reply = await extractDocuments(endpoints[req.path], raw_directory, summary_directory);
     res.send(reply);
   } else {
-    const reply = await extractDocuments(URLcontainer[0]);
+    const summary_directory = "db" + req.path + ".csv";
+    const reply = readFromCSV(summary_directory);
     res.send(reply);
   }
 });

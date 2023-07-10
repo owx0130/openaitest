@@ -1,75 +1,63 @@
 import { useState, useEffect } from "react";
 
 export default function InfrastructureFeed() {
-  const [articleContainer, setArticleContainer] = useState([]);
-  const [articleEntities, setArticleEntities] = useState([]);
-  const [articleTitles, setArticleTitles] = useState([]);
-  const [articleLinks, setArticleLinks] = useState([]);
+  const REFRESH_URL = "http://localhost:8000/infrastructurerefresh";
+  const CSV_URL = "http://localhost:8000/infrastructure";
+  const [contents, setContents] = useState([]);
+  const [entities, setEntities] = useState([]);
+  const [titles, setTitles] = useState([]);
+  const [links, setLinks] = useState([]);
   const [relevancy, setRelevancy] = useState([]);
 
   function setStates(data) {
-    setArticleContainer(
-      Array.from(data.values(), (item) => item.pageContent)
-    );
-    setArticleTitles(
-      Array.from(data.values(), (item) => item.metadata.title)
-    );
-    setArticleLinks(
-      Array.from(data.values(), (item) => item.metadata.source)
-    );
-    setArticleEntities(
-      Array.from(data.values(), (item) => item.metadata.entities)
-    );
-    setRelevancy(
-      Array.from(data.values(), (item) => item.metadata.relevant)
-    )
+    setContents(Array.from(data.values(), (item) => item.pageContent));
+    setTitles(Array.from(data.values(), (item) => item.metadata.title));
+    setLinks(Array.from(data.values(), (item) => item.metadata.source));
+    setEntities(Array.from(data.values(), (item) => item.metadata.entities));
+    setRelevancy(Array.from(data.values(), (item) => item.metadata.relevant));
   }
 
   function fetchArticles() {
-    fetch("http://localhost:8000/infrastructure").then(async (response) => {
+    fetch(CSV_URL).then(async (response) => {
       const data = await response.json();
       setStates(data);
     });
   }
 
   function handleClick() {
-    fetch("http://localhost:8000/infrastructureslow").then(async (response) => {
+    fetch(REFRESH_URL).then(async (response) => {
       const data = await response.json();
       setStates(data);
     });
   }
 
-  useEffect(() => {
-    fetchArticles();
-  }, []);
+  useEffect(fetchArticles, []);
 
   return (
     <div className="main">
       <div className="top-section-container">
-      <h1>Infrastructure Feed</h1>
-      <button className="refresh-button" onClick={handleClick}>
-        Click here to refresh articles
-      </button>
+        <h1>Infrastructure Feed</h1>
+        <button className="refresh-button" onClick={handleClick}>
+          Click here to refresh articles
+        </button>
       </div>
       <table>
         <thead>
           <tr>
             <th>Article Title</th>
-            <th>URL</th>
             <th>Description</th>
             <th>Entity Extraction</th>
             <th>Relevant?</th>
           </tr>
         </thead>
         <tbody>
-          {articleContainer.map((element, index) => (
+          {contents.map((element, index) => (
             <tr key={index}>
-              <td>{articleTitles[index]}</td>
               <td>
-                <a href={articleLinks[index]}>{articleLinks[index]}</a>
+                <a href={links[index]}>{titles[index]}</a>
               </td>
               <td>{element}</td>
-              <td>{articleEntities[index]}</td>
+              <td>{entities[index]}</td>
               <td>{relevancy[index]}</td>
             </tr>
           ))}

@@ -1,10 +1,11 @@
 import { useState } from "react";
 
 export default function Main() {
-  const [articleContainer, setArticleContainer] = useState("");
-  const [articleEntities, setArticleEntities] = useState("");
-  const [articleTitle, setArticleTitle] = useState("");
-  const [articleLink, setArticleLink] = useState("");
+  const INDIV_URL = "http://localhost:8000/indivarticle";
+  const [content, setContent] = useState("");
+  const [entities, setEntities] = useState("");
+  const [title, setTitle] = useState("");
+  const [link, setLink] = useState("");
   const [prompt, setPrompt] = useState("");
 
   function handleSubmit(event) {
@@ -18,15 +19,13 @@ export default function Main() {
         "Content-type": "application/json",
       },
     };
-    fetch("http://localhost:8000/indivarticle", options).then(
-      async (reponse) => {
-        const data = await reponse.json();
-        setArticleContainer(data.pageContent);
-        setArticleTitle(data.metadata.title);
-        setArticleLink(prompt);
-        setArticleEntities(data.metadata.entities);
-      }
-    );
+    fetch(INDIV_URL, options).then(async (reponse) => {
+      const data = await reponse.json();
+      setContent(data.pageContent);
+      setTitle(data.metadata.title);
+      setLink(prompt);
+      setEntities(data.metadata.entities);
+    });
   }
 
   return (
@@ -36,19 +35,17 @@ export default function Main() {
         <thead>
           <tr>
             <th>Article Title</th>
-            <th>URL</th>
             <th>Description</th>
             <th>Entity Extraction</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>{articleTitle}</td>
             <td>
-              <a href={articleLink}>{articleLink}</a>
+              <a href={link}>{title}</a>
             </td>
-            <td>{articleContainer}</td>
-            <td>{articleEntities}</td>
+            <td>{content}</td>
+            <td>{entities}</td>
           </tr>
         </tbody>
       </table>

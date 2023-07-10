@@ -12,25 +12,21 @@ const { LLMChain } = require("langchain/chains");
 const { PromptTemplate } = require("langchain/prompts");
 const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
 
-//Set up OpenAI/LangChain
+//Set up ChatGPT API/LangChain
 const API_KEY = process.env.API_KEY;
+const model_options = {
+  modelName: "gpt-3.5-turbo",
+  temperature: 0,
+  maxTokens: -1,
+  openAIApiKey: API_KEY,
+};
 const memory = new ConversationSummaryMemory({
   memoryKey: "chat_history",
-  llm: new OpenAI({
-    modelName: "gpt-3.5-turbo",
-    temperature: 0,
-    maxTokens: -1,
-    openAIApiKey: API_KEY,
-  }),
+  llm: new OpenAI(model_options),
 });
-const model = new OpenAI({
-  temperature: 0,
-  openAIApiKey: API_KEY,
-  modelName: "gpt-3.5-turbo",
-  maxTokens: -1,
-});
+const model = new OpenAI(model_options);
 const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarise the given text, using at most 30 words to do so.
+  `Summarise the given text, using at most 20 words to do so.
 
   Text: {input}`
 );
@@ -132,9 +128,9 @@ function writeToCSV(docContainer, directory) {
 }
 
 //Read summarized content from CSV database
-function readFromCSV() {
+function readFromCSV(directory) {
   const rows = [];
-  const data = fs.readFileSync("RSSsummary.csv", "utf8");
+  const data = fs.readFileSync(directory, "utf8");
   const lines = data.split("\n");
   for (let i = 0; i < lines.length - 1; i++) {
     const row = lines[i].split(";;");
@@ -179,8 +175,8 @@ async function splitText(docContainer) {
   }
 }
 
-//Pass article content into OpenAI API to perform various actions
-async function callOpenAI(docContainer) {
+//Pass article content into ChatGPT API to perform various actions
+async function callChatGPT(docContainer) {
   const articleContent = Array.from(
     docContainer.values(),
     (item) => item.pageContent
@@ -197,14 +193,14 @@ async function callOpenAI(docContainer) {
 }
 
 //Driver function to extract and save RSS Feed articles to CSV
-async function extractDocuments(url) {
+async function extractDocuments(url, raw_directory, summary_directory) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
-  writeToCSV(docContainer, "RSSraw.csv");
+  writeToCSV(docContainer, raw_directory);
   await splitText(docContainer);
-  await callOpenAI(docContainer);
-  writeToCSV(docContainer, "RSSsummary.csv");
+  await callChatGPT(docContainer);
+  writeToCSV(docContainer, summary_directory);
   return docContainer;
 }
 
@@ -222,7 +218,7 @@ async function handleIndivArticle(url) {
   ];
   await getArticleContent(docContainer);
   await splitText(docContainer);
-  await callOpenAI(docContainer);
+  await callChatGPT(docContainer);
   return docContainer[0];
 }
 
