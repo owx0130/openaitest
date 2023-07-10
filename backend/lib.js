@@ -3,75 +3,13 @@ const axios = require("axios");
 const fs = require("fs");
 const { Document } = require("langchain/document");
 const { JSDOM } = require("jsdom");
-require("dotenv").config();
-
-//Import LangChain requirements
-const { OpenAI } = require("langchain/llms/openai");
-const { ConversationSummaryMemory } = require("langchain/memory");
-const { LLMChain } = require("langchain/chains");
-const { PromptTemplate } = require("langchain/prompts");
-const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
-
-//Set up ChatGPT API/LangChain
-const API_KEY = process.env.API_KEY;
-const model_options = {
-  modelName: "gpt-3.5-turbo",
-  temperature: 0,
-  maxTokens: -1,
-  openAIApiKey: API_KEY,
-};
-const memory = new ConversationSummaryMemory({
-  memoryKey: "chat_history",
-  llm: new OpenAI(model_options),
-});
-const model = new OpenAI(model_options);
-const summaryPrompt = PromptTemplate.fromTemplate(
-  `Summarise the given text, using at most 20 words to do so.
-
-  Text: {input}`
-);
-const dataCleaningPrompt = PromptTemplate.fromTemplate(
-  `You will be given an extract of an article body taken directly from the webpage. Your job is to 
-  clean this article body by removing the irrelevant information from it. Any information that is not 
-  relevant to the given article title can be removed. Additionally, remove any instance of the "human"
-  or "AI" speaking, and restructure the affected parts to have a third party objective point of view.
-
-  Reply only with the cleaned text body.
-
-  Text: {input}, Title: {title}`
-);
-const inferringPrompt = PromptTemplate.fromTemplate(
-  `Given a text body, perform the following steps on it:
-
-  1. Infer a maximum of 5 relevant entities from it. Entities refer to key persons/organisations
-  that are involved in the article. List all the entities separated by a comma on the same line.
-
-  2. Determine if the text is relevant to the given category. Reply with "Yes" if it is
-  relevant, "No" otherwise.
-  
-  Structure your reply as a JSON object with the properties below:
-  "entities": "insert response from step 1",
-  "relevant": "insert response from step 2"
-
-  Reply only with the stringified JSON object such that it can be parsed immediately.
-
-  Text: {input}, Category: {category}`
-);
-
-const summaryChain = new LLMChain({
-  llm: model,
-  prompt: summaryPrompt,
+const {
   memory,
-});
-const dataCleaningChain = new LLMChain({
-  llm: model,
-  prompt: dataCleaningPrompt,
-});
-const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
-const splitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 1000,
-  chunkOverlap: 200,
-});
+  summaryChain,
+  dataCleaningChain,
+  inferringChain,
+  splitter,
+} = require("./llm-requirements");
 
 //Get individual article URLS from RSS Feed link
 async function getArticleLinks(url, docContainer) {
@@ -79,7 +17,7 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= 1; i++) {
+  for (let i = 0; i <= 0; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
@@ -176,7 +114,7 @@ async function splitText(docContainer) {
 }
 
 //Pass article content into ChatGPT API to perform various actions
-async function callChatGPT(docContainer) {
+async function callChatGPT(docContainer, category) {
   const articleContent = Array.from(
     docContainer.values(),
     (item) => item.pageContent
@@ -184,7 +122,7 @@ async function callChatGPT(docContainer) {
   for (i = 0; i < articleContent.length; i++) {
     const data = await inferringChain.call({
       input: articleContent[i],
-      category: "Infrastructure",
+      category: category,
     });
     const object = JSON.parse(data.text.replace(/\n/g, ""));
     docContainer[i].metadata.entities = object.entities;
@@ -193,13 +131,13 @@ async function callChatGPT(docContainer) {
 }
 
 //Driver function to extract and save RSS Feed articles to CSV
-async function extractDocuments(url, raw_directory, summary_directory) {
+async function extractDocuments(url, raw_directory, summary_directory, category) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
   writeToCSV(docContainer, raw_directory);
   await splitText(docContainer);
-  await callChatGPT(docContainer);
+  await callChatGPT(docContainer, category);
   writeToCSV(docContainer, summary_directory);
   return docContainer;
 }

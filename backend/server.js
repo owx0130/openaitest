@@ -11,9 +11,12 @@ app.use(cors());
 
 //Declare endpoints object
 const endpoints = {
-  "/infrastructurerefresh": "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
-  "/chinarefresh": "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
-  "/airefresh": "https://www.inoreader.com/stream/user/1005506540/tag/AI%20-%20General/view/html",
+  "/infrastructurerefresh":
+    "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
+  "/chinarefresh":
+    "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
+  "/airefresh":
+    "https://www.inoreader.com/stream/user/1005506540/tag/AI%20-%20General/view/html",
   "/infrastructure": null,
   "/china": null,
   "/ai": null,
@@ -22,9 +25,15 @@ const endpoints = {
 //GET request for RSS article feed
 app.get(Object.keys(endpoints), async (req, res) => {
   if (req.path.includes("refresh")) {
+    const category = req.path.slice(1, -7);
     const raw_directory = "db" + req.path.slice(0, -7) + "raw.csv";
     const summary_directory = "db" + req.path.slice(0, -7) + ".csv";
-    const reply = await extractDocuments(endpoints[req.path], raw_directory, summary_directory);
+    const reply = await extractDocuments(
+      endpoints[req.path],
+      raw_directory,
+      summary_directory,
+      category
+    );
     res.send(reply);
   } else {
     const summary_directory = "db" + req.path + ".csv";
