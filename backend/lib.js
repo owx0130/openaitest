@@ -4,13 +4,15 @@ const fs = require("fs");
 const { Document } = require("langchain/document");
 const { JSDOM } = require("jsdom");
 const {
-  memory,
   summaryChain,
   overallSummaryChain,
-  dataCleaningChain,
   inferringChain,
   splitter,
 } = require("./llm-requirements");
+
+//Change this constant to set how many articles to extract (starting from the latest)
+//i.e. setting it to 2 extracts the 2 latest articles from the RSS feed
+const MAX_ARTICLES = 2;
 
 //Get individual article URLS from RSS Feed link
 async function getArticleLinks(url, docContainer) {
@@ -18,7 +20,7 @@ async function getArticleLinks(url, docContainer) {
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= 1; i++) {
+  for (let i = 0; i <= MAX_ARTICLES - 1; i++) {
     const docOutput = new Document({
       pageContent: "",
       metadata: {
@@ -97,22 +99,16 @@ function readFromCSV(directory) {
 async function splitText(docContainer) {
   for (i = 0; i < docContainer.length; i++) {
     const docs = await splitter.splitDocuments([docContainer[i]]);
-    const title = docContainer[i].metadata.title;
-    for (j = 0; j < docs.length; j++) {
-      const snippet = docs[j].pageContent;
-      console.log(snippet);
-      await summaryChain.call({ input: snippet });
-    }
-    const data = await memory.loadMemoryVariables();
-    const summary = JSON.stringify(data.chat_history);
-    console.log(summary);
-    const cleanSummary = await dataCleaningChain.call({
-      input: summary,
-      title: title,
+    const res = await Promise.all(
+      docs.map(async (item) => {
+        return summaryChain.call({ input: item.pageContent });
+      })
+    );
+    const summary = await overallSummaryChain.call({
+      input: res.map((item) => item.text),
     });
-    console.log(cleanSummary);
-    docContainer[i].pageContent = cleanSummary.text.replace(/\n/g, "");
-    memory.clear();
+    console.log(summary);
+    docContainer[i].pageContent = summary.text.replace(/\n/g, "");
   }
 }
 
@@ -137,20 +133,15 @@ async function summariseAllArticles(docContainer) {
 }
 
 //Driver function to extract and save RSS Feed articles to CSV
-async function extractDocuments(
-  url,
-  raw_directory,
-  summary_directory,
-  category
-) {
+async function extractDocuments(url, directories, category) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
-  writeToCSV(docContainer, raw_directory, "");
+  writeToCSV(docContainer, directories[0], "");
   await splitText(docContainer);
   await inferFromText(docContainer, category);
   const summary = await summariseAllArticles(docContainer);
-  writeToCSV(docContainer, summary_directory, summary);
+  writeToCSV(docContainer, directories[1], summary);
 }
 
 //Driver function to handle individual articles
@@ -167,7 +158,7 @@ async function handleIndivArticle(url) {
   ];
   await getArticleContent(docContainer);
   await splitText(docContainer);
-  await inferFromText(docContainer);
+  await inferFromText(docContainer, "");
   return docContainer[0];
 }
 
