@@ -130,7 +130,7 @@ async function summariseAllArticles(docContainer) {
 
 //Driver function to extract and save RSS Feed articles to CSV
 export async function extractDocuments(url, directories, category) {
-  const docContainer = [];
+  let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
   writeToCSV(docContainer, directories[0], "");
