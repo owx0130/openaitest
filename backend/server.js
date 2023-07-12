@@ -1,7 +1,7 @@
-//Import relevant libraries
-const express = require("express");
-const cors = require("cors");
-const { extractDocuments, readFromCSV, handleIndivArticle } = require("./lib");
+//Import server dependencies
+import express from "express";
+import cors from "cors";
+import { extractDocuments, readFromCSV, handleIndivArticle } from "./lib.js";
 
 //Set up Express.js server
 const PORT = 8000;

@@ -12,5 +12,6 @@
   },
   "scripts": {
     "backend": "nodemon server.js"
-  }
+  },
+  "type": "module"
 }

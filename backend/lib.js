@@ -1,14 +1,14 @@
 //Import dependencies
-const axios = require("axios");
-const fs = require("fs");
-const { Document } = require("langchain/document");
-const { JSDOM } = require("jsdom");
-const {
+import axios from "axios";
+import fs from "fs";
+import { JSDOM } from "jsdom";
+import { Document } from "langchain/document";
+import {
   summaryChain,
   overallSummaryChain,
   inferringChain,
   splitter,
-} = require("./llm-requirements");
+} from "./llm-requirements.js";
 
 //Change this constant to set how many articles to extract (starting from the latest)
 //i.e. setting it to 2 extracts the 2 latest articles from the RSS feed
@@ -70,7 +70,7 @@ function writeToCSV(docContainer, directory, summary) {
 }
 
 //Read summarized content from CSV database
-function readFromCSV(directory) {
+export function readFromCSV(directory) {
   const rows = [];
   const data = fs.readFileSync(directory, "utf8");
   const lines = data.split("\n");
@@ -97,7 +97,7 @@ function readFromCSV(directory) {
 
 //Split article body into chunks
 async function splitText(docContainer) {
-  for (i = 0; i < docContainer.length; i++) {
+  for (let i = 0; i < docContainer.length; i++) {
     const docs = await splitter.splitDocuments([docContainer[i]]);
     const res = await Promise.all(
       docs.map(async (item) => {
@@ -114,7 +114,7 @@ async function splitText(docContainer) {
 
 //Infer entities and relevancy from summarised text
 async function inferFromText(docContainer, category) {
-  for (i = 0; i < docContainer.length; i++) {
+  for (let i = 0; i < docContainer.length; i++) {
     const data = await inferringChain.call({
       input: docContainer[i].pageContent,
       category: category,
@@ -133,7 +133,7 @@ async function summariseAllArticles(docContainer) {
 }
 
 //Driver function to extract and save RSS Feed articles to CSV
-async function extractDocuments(url, directories, category) {
+export async function extractDocuments(url, directories, category) {
   let docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
@@ -145,7 +145,7 @@ async function extractDocuments(url, directories, category) {
 }
 
 //Driver function to handle individual articles
-async function handleIndivArticle(url) {
+export async function handleIndivArticle(url) {
   const docContainer = [
     new Document({
       pageContent: "",
@@ -161,9 +161,3 @@ async function handleIndivArticle(url) {
   await inferFromText(docContainer, "");
   return docContainer[0];
 }
-
-module.exports = {
-  extractDocuments,
-  readFromCSV,
-  handleIndivArticle,
-};

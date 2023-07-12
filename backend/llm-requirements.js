@@ -1,9 +1,9 @@
 //Import LangChain requirements
-const { OpenAI } = require("langchain/llms/openai");
-const { LLMChain } = require("langchain/chains");
-const { PromptTemplate } = require("langchain/prompts");
-const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
-require("dotenv").config();
+import { OpenAI } from "langchain/llms/openai";
+import { LLMChain } from "langchain/chains";
+import { PromptTemplate } from "langchain/prompts";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import "dotenv/config";
 
 //Set up ChatGPT API/LangChain
 const API_KEY = process.env.API_KEY;
@@ -48,20 +48,13 @@ const inferringPrompt = PromptTemplate.fromTemplate(
 );
 
 //Create Chains to call ChatGPT API
-const summaryChain = new LLMChain({ llm: model, prompt: summaryPrompt });
-const overallSummaryChain = new LLMChain({
+export const summaryChain = new LLMChain({ llm: model, prompt: summaryPrompt });
+export const overallSummaryChain = new LLMChain({
   llm: model,
   prompt: overallSummaryPrompt,
 });
-const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
-const splitter = new RecursiveCharacterTextSplitter({
+export const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
+export const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
   chunkOverlap: 200,
 });
-
-module.exports = {
-  summaryChain,
-  overallSummaryChain,
-  inferringChain,
-  splitter,
-};
