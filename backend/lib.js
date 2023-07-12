@@ -95,34 +95,30 @@ export function readFromCSV(directory) {
   return [docContainer, summary];
 }
 
-//Split article body into chunks
-async function splitText(docContainer) {
-  for (let i = 0; i < docContainer.length; i++) {
-    const docs = await splitter.splitDocuments([docContainer[i]]);
-    const res = await Promise.all(
-      docs.map(async (item) => {
-        return summaryChain.call({ input: item.pageContent });
-      })
-    );
-    const summary = await overallSummaryChain.call({
-      input: res.map((item) => item.text),
-    });
-    console.log(summary);
-    docContainer[i].pageContent = summary.text.replace(/\n/g, "");
-  }
-}
-
-//Infer entities and relevancy from summarised text
-async function inferFromText(docContainer, category) {
-  for (let i = 0; i < docContainer.length; i++) {
-    const data = await inferringChain.call({
-      input: docContainer[i].pageContent,
-      category: category,
-    });
-    const object = JSON.parse(data.text.replace(/\n/g, ""));
-    docContainer[i].metadata.entities = object.entities;
-    docContainer[i].metadata.relevant = object.relevant;
-  }
+//Call ChatGPT API on one document
+async function callChatGPT(doc, category) {
+  //Split the document into chunks
+  const split_docs = await splitter.splitDocuments([doc]);
+  //Concurrently summarise every chunk with ChatGPT
+  const res = await Promise.all(
+    split_docs.map(async (item) => {
+      return summaryChain.call({ input: item.pageContent });
+    })
+  );
+  //Consolidate all summarised chunks into one paragraph
+  const summary = await overallSummaryChain.call({
+    input: res.map((item) => item.text),
+  });
+  doc.pageContent = summary.text.replace(/\n/g, "");
+  //Use summarised text to perform inference with ChatGPT
+  const data = await inferringChain.call({
+    input: doc.pageContent,
+    category: category,
+  });
+  const object = JSON.parse(data.text.replace(/\n/g, ""));
+  doc.metadata.entities = object.entities;
+  doc.metadata.relevant = object.relevant;
+  return doc;
 }
 
 //Provide an overall summary of all articles in the feed
@@ -134,12 +130,15 @@ async function summariseAllArticles(docContainer) {
 
 //Driver function to extract and save RSS Feed articles to CSV
 export async function extractDocuments(url, directories, category) {
-  let docContainer = [];
+  const docContainer = [];
   await getArticleLinks(url, docContainer);
   await getArticleContent(docContainer);
   writeToCSV(docContainer, directories[0], "");
-  await splitText(docContainer);
-  await inferFromText(docContainer, category);
+  docContainer = await Promise.all(
+    docContainer.map(async (item) => {
+      return callChatGPT(item, category);
+    })
+  );
   const summary = await summariseAllArticles(docContainer);
   writeToCSV(docContainer, directories[1], summary);
 }
@@ -157,7 +156,6 @@ export async function handleIndivArticle(url) {
     }),
   ];
   await getArticleContent(docContainer);
-  await splitText(docContainer);
-  await inferFromText(docContainer, "");
-  return docContainer[0];
+  const doc = await callChatGPT(docContainer[0], "");
+  return doc;
 }

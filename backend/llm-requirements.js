@@ -21,7 +21,7 @@ const summaryPrompt = PromptTemplate.fromTemplate(
   Text: {input}`
 );
 const overallSummaryPrompt = PromptTemplate.fromTemplate(
-  `You will be provided with an array containing summarised content from various articles. Parse through
+  `You will be provided with an array containing various summarised content at each index. Parse through
   the array and retrieve the content from every index, concatenating them into a single paragraph.
   Afterwards, summarise the paragraph using as few words as possible.
 
