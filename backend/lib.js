@@ -5,50 +5,58 @@ import { JSDOM } from "jsdom";
 import { Document } from "langchain/document";
 import {
   summaryChain,
-  overallSummaryChain,
+  combineSummaryChain,
+  allArticlesSummaryChain,
   inferringChain,
   splitter,
 } from "./llm-requirements.js";
 
 //Change this constant to set how many articles to extract (starting from the latest)
 //i.e. setting it to 2 extracts the 2 latest articles from the RSS feed
-const MAX_ARTICLES = 2;
+const MAX_ARTICLES = 3;
 
 //Get individual article URLS from RSS Feed link
-async function getArticleLinks(url, docContainer) {
+async function getArticleLinks(url) {
+  const docContainer = [];
   const response = await axios.get(url);
   const dom = new JSDOM(response.data);
   const document = dom.window.document;
   const elementContainer = document.querySelectorAll("a.title_link.bluelink");
-  for (let i = 0; i <= MAX_ARTICLES - 1; i++) {
-    const docOutput = new Document({
-      pageContent: "",
-      metadata: {
-        source: elementContainer[i].getAttribute("href"),
-        title: "",
-        entities: "",
-        relevant: "",
-      },
-    });
-    docContainer.push(docOutput);
+  let i = 0;
+  while (docContainer.length != MAX_ARTICLES) {
+    const article_url = elementContainer[i].getAttribute("href");
+    //Exclude Google News and Reddit articles
+    if (!(article_url.includes("google") || article_url.includes("reddit"))) {
+      const docOutput = new Document({
+        pageContent: "",
+        metadata: {
+          source: article_url,
+          title: "",
+          entities: "",
+          relevant: "",
+        },
+      });
+      docContainer.push(docOutput);
+    }
+    i++;
   }
+  return docContainer;
 }
 
 //Extract the article content from the URLs (article body, title)
-async function getArticleContent(docContainer) {
-  for (let i = 0; i < docContainer.length; i++) {
-    let fullArticle = "";
-    const response = await axios.get(docContainer[i].metadata.source);
-    const dom = new JSDOM(response.data);
-    const document = dom.window.document;
-    const articleContent = document.querySelectorAll("p");
-    const raw_title = document.querySelector("title").textContent;
-    articleContent.forEach((para) => {
-      fullArticle += para.textContent;
-    });
-    docContainer[i].pageContent = fullArticle.replace(/\n/g, "");
-    docContainer[i].metadata.title = raw_title.replace(/\n/g, "");
-  }
+async function getArticleContent(doc) {
+  let fullArticle = "";
+  const response = await axios.get(doc.metadata.source);
+  const dom = new JSDOM(response.data);
+  const document = dom.window.document;
+  const articleContent = document.querySelectorAll("p");
+  const raw_title = document.querySelector("title").textContent;
+  articleContent.forEach((para) => {
+    fullArticle += para.textContent;
+  });
+  doc.pageContent = fullArticle.replace(/\n/g, "");
+  doc.metadata.title = raw_title.replace(/\n/g, "");
+  return doc;
 }
 
 //Update CSV database. This replaces all existing content in the current CSV file
@@ -95,7 +103,7 @@ export function readFromCSV(directory) {
   return [docContainer, summary];
 }
 
-//Call ChatGPT API on one document
+//Call ChatGPT API (for single article)
 async function callChatGPT(doc, category) {
   //Split the document into chunks
   const split_docs = await splitter.splitDocuments([doc]);
@@ -106,8 +114,9 @@ async function callChatGPT(doc, category) {
     })
   );
   //Consolidate all summarised chunks into one paragraph
-  const summary = await overallSummaryChain.call({
+  const summary = await combineSummaryChain.call({
     input: res.map((item) => item.text),
+    title: doc.metadata.title,
   });
   doc.pageContent = summary.text.replace(/\n/g, "");
   //Use summarised text to perform inference with ChatGPT
@@ -124,15 +133,18 @@ async function callChatGPT(doc, category) {
 //Provide an overall summary of all articles in the feed
 async function summariseAllArticles(docContainer) {
   const contents = docContainer.map((item) => item.pageContent);
-  const data = await overallSummaryChain.call({ input: contents });
+  const data = await allArticlesSummaryChain.call({ input: contents });
   return data.text.replace(/\n/g, "");
 }
 
 //Driver function to extract and save RSS Feed articles to CSV
 export async function extractDocuments(url, directories, category) {
-  let docContainer = [];
-  await getArticleLinks(url, docContainer);
-  await getArticleContent(docContainer);
+  let docContainer = await getArticleLinks(url);
+  docContainer = await Promise.all(
+    docContainer.map(async (item) => {
+      return getArticleContent(item);
+    })
+  );
   writeToCSV(docContainer, directories[0], "");
   docContainer = await Promise.all(
     docContainer.map(async (item) => {
@@ -145,17 +157,15 @@ export async function extractDocuments(url, directories, category) {
 
 //Driver function to handle individual articles
 export async function handleIndivArticle(url) {
-  const docContainer = [
-    new Document({
-      pageContent: "",
-      metadata: {
-        source: url,
-        title: "",
-        entities: "",
-      },
-    }),
-  ];
-  await getArticleContent(docContainer);
-  const doc = await callChatGPT(docContainer[0], "");
+  let doc = new Document({
+    pageContent: "",
+    metadata: {
+      source: url,
+      title: "",
+      entities: "",
+    },
+  });
+  doc = await getArticleContent(doc);
+  doc = await callChatGPT(doc);
   return doc;
 }

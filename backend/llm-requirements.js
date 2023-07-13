@@ -20,12 +20,19 @@ const summaryPrompt = PromptTemplate.fromTemplate(
 
   Text: {input}`
 );
-const overallSummaryPrompt = PromptTemplate.fromTemplate(
-  `You will be provided with an array of various summarised content. Parse through
-  the array and retrieve the content from every index, summarise all of them into a single
-  paragraph using as few words as possible.
+const combineSummaryPrompt = PromptTemplate.fromTemplate(
+  `You will be provided with an array of texts from one article. Condense all of them into 
+  a single paragraph, ensuring that all sentences flow smoothly. Next, remove any repeated 
+  or unrelated information from the paragraph, thereafter providing it as your response.
 
-  Reply only with the summarised content, ignoring the input content.
+  Unrelated information refers to any content that is not relevant to the given article title.
+
+  Array of content: {input}, Title: {title}`
+);
+const allArticlesSummaryPrompt = PromptTemplate.fromTemplate(
+  `You will be provided with an array of article text from different articles. Summarize
+  every article using as few words as possible, then condense them together to form a
+  short paragraph. Provide this paragraph as your response.
 
   Array of content: {input}`
 );
@@ -49,11 +56,17 @@ const inferringPrompt = PromptTemplate.fromTemplate(
 
 //Create Chains to call ChatGPT API
 export const summaryChain = new LLMChain({ llm: model, prompt: summaryPrompt });
-export const overallSummaryChain = new LLMChain({
+export const combineSummaryChain = new LLMChain({
   llm: model,
-  prompt: overallSummaryPrompt,
+  prompt: combineSummaryPrompt,
+});
+export const allArticlesSummaryChain = new LLMChain({
+  llm: model,
+  prompt: allArticlesSummaryPrompt,
 });
 export const inferringChain = new LLMChain({ llm: model, prompt: inferringPrompt });
+
+//Create text splitter
 export const splitter = new RecursiveCharacterTextSplitter({
   chunkSize: 1000,
   chunkOverlap: 200,

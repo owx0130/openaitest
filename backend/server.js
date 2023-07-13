@@ -9,34 +9,32 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-//Declare endpoints object
-const endpoints = {
+const refresh_endpoints = {
   "/infrastructurerefresh":
     "https://www.inoreader.com/stream/user/1005506540/tag/Infrastructure/view/html?t=News%20%20-%20Infrastructure",
   "/chinarefresh":
     "https://www.inoreader.com/stream/user/1005506540/tag/News%20-%20China/view/html",
   "/airefresh":
     "https://www.inoreader.com/stream/user/1005506540/tag/AI%20-%20General/view/html",
-  "/infrastructure": null,
-  "/china": null,
-  "/ai": null,
 };
+const csv_endpoints = ["/infrastructure", "/china", "/ai"];
 
-//GET request for RSS article feed
-app.get(Object.keys(endpoints), async (req, res) => {
-  if (req.path.includes("refresh")) {
-    const category = req.path.slice(1, -7);
-    const raw_directory = "db" + req.path.slice(0, -7) + "raw.csv";
-    const summary_directory = "db" + req.path.slice(0, -7) + ".csv";
-    const directories = [raw_directory, summary_directory];
-    await extractDocuments(endpoints[req.path], directories, category);
-    const reply = readFromCSV(summary_directory);
-    res.send(reply);
-  } else {
-    const summary_directory = "db" + req.path + ".csv";
-    const reply = readFromCSV(summary_directory);
-    res.send(reply);
-  }
+//GET request to refresh RSS Feed articles
+app.get(Object.keys(refresh_endpoints), async (req, res) => {
+  const category = req.path.slice(1, -7);
+  const raw_directory = "db/" + category + "raw.csv";
+  const summary_directory = "db/" + category + ".csv";
+  const directories = [raw_directory, summary_directory];
+  await extractDocuments(refresh_endpoints[req.path], directories, category);
+  const reply = readFromCSV(summary_directory);
+  res.send(reply);
+});
+
+//GET request to read article data from CSV files
+app.get(csv_endpoints, async (req, res) => {
+  const summary_directory = "db" + req.path + ".csv";
+  const reply = readFromCSV(summary_directory);
+  res.send(reply);
 });
 
 //POST request for individual articles
