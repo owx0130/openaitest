@@ -30,9 +30,9 @@ const combineSummaryPrompt = PromptTemplate.fromTemplate(
   Array of content: {input}, Title: {title}`
 );
 const allArticlesSummaryPrompt = PromptTemplate.fromTemplate(
-  `You will be provided with an array of article text from different articles. Summarize
-  every article using as few words as possible, then condense them together to form a
-  short paragraph. Provide this paragraph as your response.
+  `You will be provided with an array of article text from different articles. Write a short
+  paragraph containing short descriptions of every article. Provide this paragraph as your
+  response.
 
   Array of content: {input}`
 );
